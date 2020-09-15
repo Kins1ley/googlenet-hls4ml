@@ -13,6 +13,7 @@ void googlenet(
 	FIX_INT8 conv1_7x7_s2_w_0[conv1_7x7_s2_kernel_num][conv1_7x7_s2_kernel_channel][conv1_7x7_s2_kernel_height][conv1_7x7_s2_kernel_width],
 	FIX_INT20 conv1_7x7_s2_b_0[conv1_7x7_s2_bias_num],
 	FIX_INT20 conv1_7x7_s2_1[conv1_7x7_s2_out_channel][conv1_7x7_s2_out_height][conv1_7x7_s2_out_width],
+	FIX_INT20 pool1_3x3_s2_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
 
 	FIX_INT20 pool3_3x3_s2[pool3_3x3_s2_out_channel][pool3_3x3_s2_out_height][pool3_3x3_s2_out_width],
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
@@ -130,27 +131,95 @@ void googlenet(
 										}
 										nnet::copy_features_g2l<global_feature_config, conv7x7_s2_local_feature_in_config>(global_feature[0],local_feature_in_conv7x7_s2[pe_idx],
 											i_idx*IN_CHAN_CONV7x7_S2,0, IN_CHAN_CONV7x7_S2,
-											h_idx*2, 0, IN_HEIGHT_CONV7x7_S2,
-											w_idx*2, 0, IN_WIDTH_CONV7x7_S2);
+											h_idx*OUT_HEIGHT_CONV7x7_S2*STRIDE_CONV7x7_S2, 0, IN_HEIGHT_CONV7x7_S2,
+											w_idx*OUT_WIDTH_CONV7x7_S2*STRIDE_CONV7x7_S2, 0, IN_WIDTH_CONV7x7_S2);
 										nnet::copy_weights_g2l<conv7x7_global_weight_config, conv7x7_s2_local_weight_config>(global_weight_7x7[0], local_weight_conv7x7_s2[pe_idx],
 											o_idx*conv1_7x7_s2_inner_pe_parallel, OUT_CHAN_CONV7x7_S2,
 											i_idx*IN_CHAN_CONV7x7_S2, IN_CHAN_CONV7x7_S2 );
 										nnet::conv_output_reuse7x7<conv2d_config_7x7_s2>(local_feature_in_conv7x7_s2[pe_idx], local_weight_conv7x7_s2[pe_idx], local_feature_out_conv7x7_s2[pe_idx]);
+										nnet::relu_inplace<relu_conv2d_config_7x7_s2>(local_feature_out_conv7x7_s2[pe_idx]);
 									}
-									nnet::copy_features_l2g<conv7x7_s2_local_feature_in_config, global_feature_config>(local_feature_out_conv7x7_s2[pe_idx], global_feature[1],
-										o_idx*OUT_CHAN_CONV7x7_S2, OUT_CHAN_CONV7x7_S2,
+									nnet::copy_features_l2g<conv7x7_s2_local_feature_out_config, global_feature_config>(local_feature_out_conv7x7_s2[pe_idx], global_feature[1],
+										o_idx*OUT_CHAN_CONV7x7_S2+pe_idx, OUT_CHAN_CONV7x7_S2,
 										h_idx*OUT_HEIGHT_CONV7x7_S2, OUT_HEIGHT_CONV7x7_S2,
 										w_idx*OUT_WIDTH_CONV7x7_S2, OUT_WIDTH_CONV7x7_S2);
 								}
 							}
 						}
 					}
-					nnet::copy_features_BRAM2DDR<global_feature_config>(global_feature[1], conv1_7x7_s2_1);
+					nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[1], conv1_7x7_s2_1,
+						outer_oc_idx*OUT_CHANNEL_WEIGHT_GLOBAL_7x7, OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
+						outer_h_idx*conv1_7x7_s2_out_height_per_block, conv1_7x7_s2_out_height_per_block,
+						outer_w_idx*conv1_7x7_s2_out_width_per_block, conv1_7x7_s2_out_width_per_block);
 				}
 			}
 		}
 	}
+	//pool1_3x3_s2
+//outer loop
+//copy data and call PE to do calculation
+	for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++) {
+		for (int outer_w_idx = 0; outer_w_idx < pool1_3x3_s2_outer_width; outer_w_idx++) {
+			for (int outer_c_idx = 0; outer_c_idx < pool1_3x3_s2_outer_channel; outer_c_idx++) {
+				//calculate the index to copy features. padding considered here. 
+				int DDR_feature_h_start_idx = outer_h_idx * pool1_3x3_s2_out_height_per_block*pool1_3x3_s2_stride;
+				int DDR_feature_w_start_idx = outer_w_idx * pool1_3x3_s2_out_width_per_block*pool1_3x3_s2_stride;
+				int DDR_feature_c_start_idx = outer_c_idx * CHANNEL_FEATURE_GLOBAL;
+				int global_feature_h_start_idx = 0;
+				int global_feature_w_start_idx = 0;
+				int global_feature_c_start_idx = 0;
+				int global_feature_c_num = CHANNEL_FEATURE_GLOBAL;
+				int global_feature_h_num = (pool1_3x3_s2_out_height_per_block - 1)* pool1_3x3_s2_stride + pool1_3x3_s2_kernel_height;
+				int global_feature_w_num = (pool1_3x3_s2_out_width_per_block - 1)* pool1_3x3_s2_stride + pool1_3x3_s2_kernel_width;
 
+				if (outer_h_idx == 0) {
+					global_feature_h_start_idx += pool1_3x3_s2_pad_top;
+					global_feature_h_num -= pool1_3x3_s2_pad_top;
+				}
+				if (outer_w_idx == 0) {
+					global_feature_w_start_idx += pool1_3x3_s2_pad_left;
+					global_feature_w_num -= pool1_3x3_s2_pad_left;
+				}
+				if (outer_h_idx == pool1_3x3_s2_outer_height - 1) {
+					global_feature_h_num -= pool1_3x3_s2_pad_bottom;
+				}
+				if (outer_w_idx == pool1_3x3_s2_outer_width - 1) {
+					global_feature_w_num -= pool1_3x3_s2_pad_right;
+				}
+				if (outer_c_idx == pool1_3x3_s2_outer_channel - 1) {
+					global_feature_c_num = pool1_3x3_s2_in_channel - outer_c_idx * CHANNEL_FEATURE_GLOBAL;
+				}
+				nnet::copy_features_DDR2BRAM_wjp<DDR_feature_conv1_7x7_s2_1_config, global_feature_config>(conv1_7x7_s2_1, global_feature[0],
+					DDR_feature_c_start_idx, global_feature_c_start_idx, global_feature_c_num,
+					DDR_feature_h_start_idx, global_feature_h_start_idx, global_feature_h_num,
+					DDR_feature_w_start_idx, global_feature_w_start_idx, global_feature_w_num);
+				//inner loop
+				for (int h_idx = 0; h_idx < pool1_3x3_s2_inner_height; h_idx++) {
+					for (int w_idx = 0; w_idx < pool1_3x3_s2_inner_width; w_idx++) {
+						for (int c_idx = 0; c_idx < pool1_3x3_s2_inner_channel / pool1_3x3_s2_inner_pe_parallel; c_idx++) {
+							for (int pe_idx = 0; pe_idx < pool1_3x3_s2_inner_pe_parallel; pe_idx++) {
+#pragma HLS unroll
+									nnet::copy_features_g2l<global_feature_config, pool3x3_s2_local_feature_in_config>(global_feature[0], local_feature_in_maxpool3x3_s2[pe_idx],
+										i_idx * IN_CHAN_POOL3x3_S2, 0, IN_CHAN_POOL3x3_S2,
+										h_idx * 2, 0, IN_HEIGHT_POOL3x3_S2,
+										w_idx * 2, 0, IN_WIDTH_POOL3x3_S2);
+									nnet::pool3x3<pool2d_config_max3x3_s2>(local_feature_in_maxpool3x3_s2[pe_idx], local_feature_out_maxpool3x3_s2[pe_idx]);
+							}
+								nnet::copy_features_l2g<pool3x3_s2_local_feature_out_config, global_feature_config>(local_feature_out_maxpool3x3_s2[pe_idx], global_feature[1],
+									c_idx*OUT_CHAN_POOL3x3_S2 + pe_idx, OUT_CHAN_POOL3x3_S2,
+									h_idx*OUT_HEIGHT_POOL3x3_S2, OUT_HEIGHT_POOL3x3_S2,
+									w_idx*OUT_WIDTH_POOL3x3_S2, OUT_WIDTH_POOL3x3_S2);
+						}
+							
+					}
+				}
+				nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[1], pool1_3x3_s2_1,
+					outer_c_idx*N_CHAN_MAXPOOL3x3_S2, N_CHAN_MAXPOOL3x3_S2,
+					outer_h_idx*pool1_3x3_s2_out_height_per_block, pool1_3x3_s2_out_height_per_block,
+					outer_w_idx*pool1_3x3_s2_out_width_per_block, pool1_3x3_s2_out_width_per_block);
+			}
+		}
+	}
 
 
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////

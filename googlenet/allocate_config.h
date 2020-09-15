@@ -25,6 +25,27 @@ const int conv1_7x7_s2_inner_in_channel = ( CHANNEL_FEATURE_GLOBAL/ IN_CHAN_CONV
 
 const int conv1_7x7_s2_inner_pe_parallel = NUM_PE_CONV7x7_S2;
 
-const int a[2] = { 1,32 };
+
+//pool1_3x3_s2
+const int pool1_3x3_s2_out_height_per_block = ((HEIGHT_FEATURE_GLOBAL - pool1_3x3_s2_kernel_height) / pool1_3x3_s2_stride + 1);
+const int pool1_3x3_s2_out_width_per_block = ((WIDTH_FEATURE_GLOBAL - pool1_3x3_s2_kernel_width) / pool1_3x3_s2_stride + 1);
+
+const int pool1_3x3_s2_outer_height = (pool1_3x3_s2_out_height / pool1_3x3_s2_out_height_per_block) +
+((pool1_3x3_s2_out_height % pool1_3x3_s2_out_height_per_block) == 0 ? 0 : 1);
+const int pool1_3x3_s2_outer_width = (pool1_3x3_s2_out_width / pool1_3x3_s2_out_width_per_block) +
+((pool1_3x3_s2_out_width % pool1_3x3_s2_out_width_per_block) == 0 ? 0 : 1);
+const int pool1_3x3_s2_outer_channel = (pool1_3x3_s2_in_channel / CHANNEL_FEATURE_GLOBAL) +
+((pool1_3x3_s2_in_channel % CHANNEL_FEATURE_GLOBAL) == 0 ? 0 : 1);
+
+
+const int pool1_3x3_s2_inner_height = (pool1_3x3_s2_out_height_per_block / OUT_HEIGHT_CONV7x7_S2) +
+((pool1_3x3_s2_out_height_per_block % OUT_HEIGHT_MAXPOOL3x3_S2) == 0 ? 0 : 1);
+const int pool1_3x3_s2_inner_width = (pool1_3x3_s2_out_width_per_block / OUT_WIDTH_MAXPOOL3x3_S2) +
+((pool1_3x3_s2_out_width_per_block % OUT_WIDTH_MAXPOOL3x3_S2) == 0 ? 0 : 1);
+const int pool1_3x3_s2_inner_channel = (CHANNEL_FEATURE_GLOBAL / N_CHAN_MAXPOOL3x3_S2) + ((CHANNEL_FEATURE_GLOBAL % N_CHAN_MAXPOOL3x3_S2) == 0 ? 0 : 1);
+
+const int pool1_3x3_s2_inner_pe_parallel = NUM_PE_MAXPOOL3x3_S2;
+
+
 
 #endif

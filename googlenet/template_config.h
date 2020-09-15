@@ -209,8 +209,71 @@ struct relu_conv2d_config_7x7_s2 :nnet::relu_config
 	static const unsigned in_channel = 1;
 
 };
+//DRAM config
+struct conv7x7_DDR_weight_config : nnet::Weight_Memory {
+	typedef FIX_INT20 weight_type;
+	static const unsigned out_channel = 64;
+	static const unsigned in_channel = 3;
+	static const unsigned height = 7;
+	static const unsigned width = 7;
+};
 
 
+
+//global BRAM config
+struct global_feature_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+
+	static const unsigned channel = CHANNEL_FEATURE_GLOBAL;
+	static const unsigned height = HEIGHT_FEATURE_GLOBAL;
+	static const unsigned width = WIDTH_FEATURE_GLOBAL;
+};
+
+struct conv7x7_global_weight_config : nnet::Weight_Memory {
+	typedef FIX_INT20 weight_type;
+	static const unsigned out_channel = OUT_CHANNEL_WEIGHT_GLOBAL_7x7;
+	static const unsigned in_channel = IN_CHANNEL_WEIGHT_GLOBAL_7x7;
+	static const unsigned height = 7;
+	static const unsigned width = 7;
+};
+
+
+//local BRAM config
+struct conv7x7_s2_local_feature_in_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = 1;
+	static const unsigned height = IN_HEIGHT_CONV7x7_S2;
+	static const unsigned width = IN_WIDTH_CONV7x7_S2;
+};
+
+struct conv7x7_s2_local_feature_out_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV7x7_S2;
+	static const unsigned width = OUT_WIDTH_CONV7x7_S2;
+};
+
+struct conv7x7_s2_local_weight_config : nnet::Weight_Memory {
+	typedef FIX_INT20 weight_type;
+	static const unsigned out_channel = OUT_CHAN_CONV7x7_S2;
+	static const unsigned in_channel = IN_CHAN_CONV7x7_S2;
+	static const unsigned height = 7;
+	static const unsigned width = 7;
+};
+
+struct conv3x3_s2_local_feature_in_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = N_CHAN_MAXPOOL3x3_S2;
+	static const unsigned height = IN_HEIGHT_MAXPOOL3x3_S2;
+	static const unsigned width = IN_WIDTH_MAXPOOL3x3_S2;
+};
+
+struct conv3x3_s2_local_feature_out_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = N_CHAN_MAXPOOL3x3_S2;
+	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
+	static const unsigned width = OUT_WIDTH_MAXPOOL3x3_S2;
+};
 //template config for layers
 
 /////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
@@ -221,47 +284,8 @@ struct DDR_feature_image_in_config : nnet::Feature_Memory {
 	static const unsigned height = conv1_7x7_s2_in_height;
 	static const unsigned width = conv1_7x7_s2_in_width;
 };
-struct global_feature_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
 
-	static const unsigned channel = CHANNEL_FEATURE_GLOBAL;
-	static const unsigned height = HEIGHT_FEATURE_GLOBAL;
-	static const unsigned width = WIDTH_FEATURE_GLOBAL;
-};
-struct conv7x7_s2_local_feature_in_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned in_channel = 1;
-	static const unsigned height = IN_HEIGHT_CONV7x7_S2;
-	static const unsigned width = IN_WIDTH_CONV7x7_S2;
-};
-struct conv7x7_s2_local_feature_out_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned in_channel = 1;
-	static const unsigned height = OUT_HEIGHT_CONV7x7_S2;
-	static const unsigned width = OUT_WIDTH_CONV7x7_S2;
-};
 
-struct conv7x7_DDR_weight_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = 64;
-	static const unsigned in_channel = 3;
-	static const unsigned height = 7;
-	static const unsigned width = 7;
-};
-struct conv7x7_global_weight_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = OUT_CHANNEL_WEIGHT_GLOBAL_7x7;
-	static const unsigned in_channel = IN_CHANNEL_WEIGHT_GLOBAL_7x7;
-	static const unsigned height = 7;
-	static const unsigned width = 7;
-};
-struct conv7x7_s2_local_weight_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = OUT_CHAN_CONV7x7_S2;
-	static const unsigned in_channel = IN_CHAN_CONV7x7_S2;
-	static const unsigned height = 7;
-	static const unsigned width = 7;
-};
 
 struct conv7x7_s2_set_bias_config : nnet::set_bias_config {
 	typedef FIX_INT20 bias_type;
@@ -271,6 +295,37 @@ struct conv7x7_s2_set_bias_config : nnet::set_bias_config {
 	static const unsigned height = OUT_HEIGHT_CONV7x7_S2;
 	static const unsigned width = OUT_WIDTH_CONV7x7_S2;
 };
+
+struct DDR_feature_conv1_7x7_s2_1_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = conv1_7x7_s2_out_channel;
+	static const unsigned height = conv1_7x7_s2_out_height;
+	static const unsigned width = conv1_7x7_s2_out_width;
+};
+
+
+///pool1_3x3_s2
+struct DDR_feature_pool1_3x3_s2_1_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = pool1_3x3_s2_out_channel;
+	static const unsigned height = pool1_3x3_s2_out_height;
+	static const unsigned width = pool1_3x3_s2_out_width;
+};
+
+struct pool3x3_s2_local_feature_in_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = N_CHAN_MAXPOOL3x3_S2;
+	static const unsigned height = IN_HEIGHT_MAXPOOL3x3_S2;
+	static const unsigned width = IN_WIDTH_MAXPOOL3x3_S2;
+};
+struct pool3x3_s2_local_feature_out_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned in_channel = N_CHAN_MAXPOOL3x3_S2;
+	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
+	static const unsigned width = OUT_WIDTH_MAXPOOL3x3_S2;
+};
+
+
 /////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
 
 

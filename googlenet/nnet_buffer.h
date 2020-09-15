@@ -104,7 +104,7 @@ void copy_features_DDR2BRAM(
 
 // copy features from DDR to Global BRAM
 template<typename SRC_CONFIG, typename DST_CONFIG>
-void copy_features_DDR2BRAM_wjp(
+void copy_features_DDR2BRAM_padding_zero(
 	typename SRC_CONFIG::feature_type src[SRC_CONFIG::channel][SRC_CONFIG::height][SRC_CONFIG::width],
 	typename DST_CONFIG::feature_type dst[DST_CONFIG::channel][DST_CONFIG::height][DST_CONFIG::width],
 	int src_c_offset, int dst_c_offset, int c_num,
