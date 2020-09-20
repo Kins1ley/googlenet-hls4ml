@@ -16,6 +16,9 @@
 	typedef int FIX_INT32;
 #endif
 
+#define DIV_CEIL(x,y) ((x)/(y)+(((x)%(y)==0)?0:1))
+
+
 const int IMAGE_CH = 3; // image channel
 const int IMAGE_H = 224;// image height
 const int IMAGE_W = 224;// image width
@@ -36,8 +39,8 @@ const int IN_CHANNEL_WEIGHT_GLOBAL_1x1 = 32;//size of global bram of weights
 
 const int NUM_FEATURE_GLOBAL = 8;//number of global bram of feature
 const int CHANNEL_FEATURE_GLOBAL = 64;//size of global bram of feature
-const int WIDTH_FEATURE_GLOBAL = 61;//size of global bram of feature
-const int HEIGHT_FEATURE_GLOBAL = 61;//size of global bram of feature
+const int WIDTH_FEATURE_GLOBAL = 63;//size of global bram of feature
+const int HEIGHT_FEATURE_GLOBAL = 63;//size of global bram of feature
 
 ///config of local BRAM and PEs
 //conv1x1_s1
@@ -46,8 +49,11 @@ const int IN_CHAN_CONV1x1_S1 = 16;//in_channel of input feature and weight
 const int OUT_CHAN_CONV1x1_S1 = 1;//out_channel of output feature and weight
 const int OUT_HEIGHT_CONV1x1_S1 = 7;
 const int OUT_WIDTH_CONV1x1_S1 = 7;
-const int IN_HEIGHT_CONV1x1_S1 = OUT_HEIGHT_CONV1x1_S1;
-const int IN_WIDTH_CONV1x1_S1 = OUT_WIDTH_CONV1x1_S1;
+const int KERNEL_HEIGHT_CONV1x1_S1 = 1;
+const int KERNEL_WIDTH_CONV1x1_S1 = 1;
+const int IN_HEIGHT_CONV1x1_S1 = (OUT_HEIGHT_CONV1x1_S1 - 1)*STRIDE_CONV1x1_S1 + KERNEL_HEIGHT_CONV1x1_S1;
+const int IN_WIDTH_CONV1x1_S1 = (OUT_WIDTH_CONV1x1_S1 - 1)*STRIDE_CONV1x1_S1 + KERNEL_WIDTH_CONV1x1_S1;
+const int STRIDE_CONV1x1_S1 = 1;
 
 //conv3x3_s1
 const int NUM_PE_CONV3x3_S1 = 16;//number of local bram should be consistent with number of PEs
@@ -55,8 +61,11 @@ const int IN_CHAN_CONV3x3_S1 = 16;//in_channel of input feature and weight
 const int OUT_CHAN_CONV3x3_S1 = 1;//out_channel of output feature and weight
 const int OUT_HEIGHT_CONV3x3_S1 = 7;
 const int OUT_WIDTH_CONV3x3_S1 = 7;
-const int IN_HEIGHT_CONV3x3_S1 = OUT_HEIGHT_CONV3x3_S1+2;
-const int IN_WIDTH_CONV3x3_S1 = OUT_WIDTH_CONV3x3_S1+2;
+const int KERNEL_HEIGHT_CONV3x3_S1 = 3;
+const int KERNEL_WIDTH_CONV3x3_S1 = 3;
+const int IN_HEIGHT_CONV3x3_S1 = (OUT_HEIGHT_CONV3x3_S1 - 1)*STRIDE_CONV3x3_S1 + KERNEL_HEIGHT_CONV3x3_S1;
+const int IN_WIDTH_CONV3x3_S1 = (OUT_WIDTH_CONV3x3_S1 - 1)*STRIDE_CONV3x3_S1 + KERNEL_WIDTH_CONV3x3_S1;
+const int STRIDE_CONV3x3_S1 = 1;
 
 //conv5x5_s1
 const int NUM_PE_CONV5x5_S1 = 16;//number of local bram should be consistent with number of PEs
@@ -64,8 +73,11 @@ const int IN_CHAN_CONV5x5_S1 = 16;
 const int OUT_CHAN_CONV5x5_S1 = 1;
 const int OUT_HEIGHT_CONV5x5_S1 = 7;
 const int OUT_WIDTH_CONV5x5_S1 = 7;
-const int IN_HEIGHT_CONV5x5_S1 = OUT_HEIGHT_CONV5x5_S1 + 4;
-const int IN_WIDTH_CONV5x5_S1 = OUT_WIDTH_CONV5x5_S1 + 4;
+const int KERNEL_HEIGHT_CONV5x5_S1 = 5;
+const int KERNEL_WIDTH_CONV5x5_S1 = 5;
+const int IN_HEIGHT_CONV5x5_S1 = (OUT_HEIGHT_CONV5x5_S1 - 1)*STRIDE_CONV5x5_S1 + KERNEL_HEIGHT_CONV5x5_S1;
+const int IN_WIDTH_CONV5x5_S1 = (OUT_WIDTH_CONV5x5_S1 - 1)*STRIDE_CONV5x5_S1 + KERNEL_WIDTH_CONV5x5_S1;
+const int STRIDE_CONV5x5_S1 = 1;
 
 //conv7x7_s2
 const int NUM_PE_CONV7x7_S2 = 2;//number of local bram should be consistent with number of PEs
@@ -75,9 +87,9 @@ const int OUT_HEIGHT_CONV7x7_S2 = 7;
 const int OUT_WIDTH_CONV7x7_S2 = 7;
 const int KERNEL_HEIGHT_CONV7x7_S2 = 7;
 const int KERNEL_WIDTH_CONV7x7_S2 = 7;
-const int STRIDE_CONV7x7_S2 = 2;
 const int IN_HEIGHT_CONV7x7_S2 = (OUT_HEIGHT_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_HEIGHT_CONV7x7_S2;
 const int IN_WIDTH_CONV7x7_S2 = (OUT_WIDTH_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_WIDTH_CONV7x7_S2;
+const int STRIDE_CONV7x7_S2 = 2;
 
 ///config of pooling operation
 //maxpool3x3_s1
@@ -85,8 +97,11 @@ const int NUM_PE_MAXPOOL3x3_S1 = 2;
 const int N_CHAN_MAXPOOL3x3_S1 = 16;
 const int OUT_HEIGHT_MAXPOOL3x3_S1 = 7;
 const int OUT_WIDTH_MAXPOOL3x3_S1 = 7;
-const int IN_HEIGHT_MAXPOOL3x3_S1 = OUT_HEIGHT_MAXPOOL3x3_S1 + 2;
-const int IN_WIDTH_MAXPOOL3x3_S1 = OUT_WIDTH_MAXPOOL3x3_S1 + 2;
+const int KERNEL_HEIGHT_MAXPOOL3x3_S1 = 3;
+const int KERNEL_WIDTH_MAXPOOL3x3_S1 = 3;
+const int STRIDE_MAXPOOL3x3_S1 = 1;
+const int IN_HEIGHT_MAXPOOL3x3_S1 = (OUT_HEIGHT_MAXPOOL3x3_S1 - 1)* STRIDE_MAXPOOL3x3_S1 + KERNEL_HEIGHT_MAXPOOL3x3_S1;
+const int IN_WIDTH_MAXPOOL3x3_S1 = (OUT_WIDTH_MAXPOOL3x3_S1 - 1)* STRIDE_MAXPOOL3x3_S1 + KERNEL_WIDTH_MAXPOOL3x3_S1;
 
 //maxpool3x3_s2
 const int NUM_PE_MAXPOOL3x3_S2 = 2;
@@ -104,8 +119,11 @@ const int NUM_PE_AVGPOOL7x7_S1 = 2;
 const int N_CHAN_AVGPOOL7x7_S1 = 16;
 const int OUT_HEIGHT_AVGPOOL7x7_S1 = 1;
 const int OUT_WIDTH_AVGPOOL7x7_S1 = 1;
-const int IN_HEIGHT_AVGPOOL7x7_S1 = OUT_HEIGHT_AVGPOOL7x7_S1 * 2 + 1;
-const int IN_WIDTH_AVGPOOL7x7_S1 = OUT_WIDTH_AVGPOOL7x7_S1 * 2 + 1;
+const int KERNEL_HEIGHT_AVGPOOL7x7_S1 = 7;
+const int KERNEL_WIDTH_AVGPOOL7x7_S1 = 7;
+const int STRIDE_AVGPOOL7x7_S1 = 1;
+const int IN_HEIGHT_AVGPOOL7x7_S1 = (OUT_HEIGHT_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_HEIGHT_AVGPOOL7x7_S1;
+const int IN_WIDTH_AVGPOOL7x7_S1 = (OUT_WIDTH_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_WIDTH_AVGPOOL7x7_S1;
 
 
 //config of layers

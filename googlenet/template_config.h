@@ -170,8 +170,8 @@ struct relu_conv2d_config_1x1_s1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
-	static const unsigned in_height = IN_HEIGHT_CONV1x1_S1;
-	static const unsigned in_width = IN_WIDTH_CONV1x1_S1;
+	static const unsigned in_height = OUT_HEIGHT_CONV1x1_S1;
+	static const unsigned in_width = OUT_WIDTH_CONV1x1_S1;
 	static const unsigned n_chan = 1;
 
 };
@@ -182,8 +182,8 @@ struct relu_conv2d_config_3x3_s1 :nnet::relu_config
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
 
-	static const unsigned in_height = IN_HEIGHT_CONV3x3_S1;
-	static const unsigned in_width = IN_WIDTH_CONV3x3_S1;
+	static const unsigned in_height = OUT_HEIGHT_CONV3x3_S1;
+	static const unsigned in_width = OUT_WIDTH_CONV3x3_S1;
 	static const unsigned in_channel = 1;
 
 };
@@ -193,8 +193,8 @@ struct relu_conv2d_config_5x5_s1 :nnet::relu_config
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
 
-	static const unsigned in_height = IN_HEIGHT_CONV5x5_S1;
-	static const unsigned in_width = IN_WIDTH_CONV5x5_S1;
+	static const unsigned in_height = OUT_HEIGHT_CONV5x5_S1;
+	static const unsigned in_width = OUT_WIDTH_CONV5x5_S1;
 	static const unsigned in_channel = 1;
 
 };
@@ -204,18 +204,18 @@ struct relu_conv2d_config_7x7_s2 :nnet::relu_config
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
 
-	static const unsigned in_height = IN_HEIGHT_CONV7x7_S2;
-	static const unsigned in_width = IN_WIDTH_CONV7x7_S2;
+	static const unsigned in_height = OUT_HEIGHT_CONV7x7_S2;
+	static const unsigned in_width = OUT_WIDTH_CONV7x7_S2;
 	static const unsigned in_channel = 1;
 
 };
 //DRAM config
 struct conv7x7_DDR_weight_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = 64;
-	static const unsigned in_channel = 3;
-	static const unsigned height = 7;
-	static const unsigned width = 7;
+	static const unsigned out_channel = conv1_7x7_s2_kernel_channel;
+	static const unsigned in_channel = conv1_7x7_s2_kernel_channel;
+	static const unsigned height = conv1_7x7_s2_kernel_height;
+	static const unsigned width = conv1_7x7_s2_kernel_width;
 };
 
 

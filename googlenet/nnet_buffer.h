@@ -26,6 +26,28 @@ namespace nnet{
 // These duplicate functions are still reserved, for convenience.
 // TODO: update pragmas according to the design of PE.
 
+// clear the buffer
+	template<typename BUFFER_CONFIG>
+	void clear_buffer(
+		typename BUFFER_CONFIG::feature_type data[BUFFER_CONFIG::channel][BUFFER_CONFIG::height][BUFFER_CONFIG::width])
+	{
+		for (int c_idx = 0; c_idx < BUFFER_CONFIG::channel; ++c_idx)
+		{
+			for (int h_idx = 0; h_idx < BUFFER_CONFIG::height; ++h_idx)
+			{
+#pragma HLS PIPELINE
+				for (int w_idx = 0; w_idx < BUFFER_CONFIG::width; ++w_idx)
+				{
+#pragma HLS UNROLL
+					data[c_idx][h_idx][w_idx]
+						= (typename BUFFER_CONFIG::feature_type)0;
+				}
+			}
+		}
+	} // end clear buffer
+
+
+
 // copy weights from DDR to BRAM
 template<typename SRC_CONFIG, typename DST_CONFIG>
 void copy_weights_DDR2BRAM(
