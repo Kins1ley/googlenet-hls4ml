@@ -17,7 +17,8 @@
 #endif
 
 #define DIV_CEIL(x,y) ((x)/(y)+(((x)%(y)==0)?0:1))
-
+#define MAX(x,y) (((x)>(y))?(x):(y))
+#define MIN(x,y) (((x)<(y))?(x):(y))
 
 const int IMAGE_CH = 3; // image channel
 const int IMAGE_H = 224;// image height
