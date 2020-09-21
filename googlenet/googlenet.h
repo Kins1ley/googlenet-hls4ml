@@ -71,7 +71,7 @@ void googlenet(
 	FIX_INT20 local_feature_out_avgpool7x7_s1[NUM_PE_AVGPOOL7x7_S1][N_CHAN_AVGPOOL7x7_S1][OUT_HEIGHT_AVGPOOL7x7_S1][OUT_WIDTH_AVGPOOL7x7_S1];
 
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////
-		//conv1_7x7_s2
+	//conv1_7x7_s2
 	//outer loop
 	//copy data and call PE to do calculation
 	for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++) {
@@ -85,7 +85,7 @@ void googlenet(
 					int DDR_block_in_feature_c_start_idx = outer_ic_idx * conv1_7x7_s2_block_in_channel;
 					int global_block_in_feature_c_num = conv1_7x7_s2_block_in_channel;
 					int global_block_in_feature_h_num = conv1_7x7_s2_block_in_height;
-					int global_block_in_feature_w_num = conv1_7x7_s2_block_in_height;
+					int global_block_in_feature_w_num = conv1_7x7_s2_block_in_width;
 
 					//index and shape of weight in DRAM
 					int DDR_weight_ic_start_idx = outer_ic_idx * conv1_7x7_s2_block_in_channel;
@@ -112,16 +112,20 @@ void googlenet(
 					}
 					//copy input feature and weight from DRAM to global BRAM
 					for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
-						if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
+						if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
+							nnet::clear_buffer<global_feature_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
 							nnet::copy_features_DDR2BRAM<DDR_feature_image_in_config, global_feature_config>(image_in, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
 								DDR_block_in_feature_c_start_idx, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 								DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
-						else
+						}
+						else {
+							nnet::clear_buffer<global_feature_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
 							nnet::copy_features_DDR2BRAM<DDR_feature_image_in_config, global_feature_config>(image_in, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
 								DDR_block_in_feature_c_start_idx, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 								DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
+						}
 					}
 					for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7); global_weight_idx++) {
 						if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7) - 1)
@@ -138,8 +142,23 @@ void googlenet(
 					int inner_pad_bottom = (outer_h_idx == (conv1_7x7_s2_outer_height - 1) ? conv1_7x7_s2_pad_bottom : 0);
 					int inner_pad_left = (outer_w_idx == 0 ? conv1_7x7_s2_pad_left : 0);
 					int inner_pad_right = (outer_w_idx == (conv1_7x7_s2_outer_width - 1) ? conv1_7x7_s2_pad_bottom : 0);
-					int inner_height = DIV_CEIL((DDR_block_in_feature_h_start_idx + global_block_in_feature_h_num + inner_pad_bottom + inner_pad_top - KERNEL_HEIGHT_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1 - DIV_CEIL(DDR_block_in_feature_h_start_idx, STRIDE_CONV7x7_S2), OUT_HEIGHT_CONV7x7_S2);
-					int inner_width = DIV_CEIL((DDR_block_in_feature_w_start_idx + global_block_in_feature_w_num + inner_pad_right + inner_pad_left - KERNEL_WIDTH_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1 - DIV_CEIL(DDR_block_in_feature_w_start_idx, STRIDE_CONV7x7_S2), OUT_WIDTH_CONV7x7_S2);
+					int inner_height = DIV_CEIL((DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + global_block_in_feature_h_num + inner_pad_bottom - KERNEL_HEIGHT_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
+						- DIV_CEIL(DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top, STRIDE_CONV7x7_S2),
+						OUT_HEIGHT_CONV7x7_S2);
+					int inner_width = DIV_CEIL((DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + global_block_in_feature_w_num + inner_pad_right - KERNEL_WIDTH_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
+						- DIV_CEIL(DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left, STRIDE_CONV7x7_S2),
+						OUT_WIDTH_CONV7x7_S2);
+					if (outer_h_idx == 0)
+					{
+						inner_height = DIV_CEIL((DDR_block_in_feature_h_start_idx + global_block_in_feature_h_num + inner_pad_bottom + conv1_7x7_s2_pad_top - KERNEL_HEIGHT_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
+							- DIV_CEIL(DDR_block_in_feature_h_start_idx, STRIDE_CONV7x7_S2),
+							OUT_HEIGHT_CONV7x7_S2);
+					}
+					if (outer_w_idx == 0) {
+						inner_width = DIV_CEIL((DDR_block_in_feature_w_start_idx + global_block_in_feature_w_num + inner_pad_right + conv1_7x7_s2_pad_left - KERNEL_WIDTH_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
+							- DIV_CEIL(DDR_block_in_feature_w_start_idx, STRIDE_CONV7x7_S2),
+							OUT_WIDTH_CONV7x7_S2);
+					}
 					int inner_out_channel = DIV_CEIL(global_weight_oc_num, conv1_7x7_s2_inner_pe_parallel*OUT_CHAN_CONV7x7_S2);
 					int inner_in_channel = DIV_CEIL(global_weight_ic_num, IN_CHAN_CONV7x7_S2);
 					//do inner loop
@@ -160,8 +179,8 @@ void googlenet(
 
 										//index of input feature in global BRAM
 										int global_in_feature_c_start_idx = i_idx * IN_CHAN_CONV7x7_S2;
-										int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_CONV7x7_S2*STRIDE_CONV7x7_S2 - inner_pad_top;
-										int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_CONV7x7_S2*STRIDE_CONV7x7_S2 - inner_pad_left;
+										int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_CONV7x7_S2*STRIDE_CONV7x7_S2 - inner_pad_top; //
+										int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_CONV7x7_S2*STRIDE_CONV7x7_S2 - inner_pad_left;// 
 
 										//index and shape of input feature in local BRAM
 										int local_in_feature_c_start_idx = 0;
@@ -189,13 +208,13 @@ void googlenet(
 											//handle padding
 											local_in_feature_h_num -= inner_pad_top;
 											local_in_feature_h_start_idx = inner_pad_top;
-											global_in_feature_h_start_idx += inner_pad_top;
+											global_in_feature_h_start_idx = 0;
 										}
 										if (w_idx == 0) {
 											//handle padding
 											local_in_feature_w_num -= inner_pad_left;
 											local_in_feature_w_start_idx = inner_pad_left;
-											global_in_feature_w_start_idx += inner_pad_left;
+											global_in_feature_w_start_idx = 0;
 										}
 
 										if (h_idx == inner_height - 1) {
@@ -215,6 +234,14 @@ void googlenet(
 											local_in_feature_c_num = global_block_in_feature_c_num - i_idx * IN_CHAN_CONV7x7_S2;
 											local_weight_ic_num = global_block_in_feature_c_num - i_idx * IN_CHAN_CONV7x7_S2;
 										}
+										// handle the situation that convolution does not start from the first element
+										if (outer_h_idx != 0) {
+											global_in_feature_h_start_idx += (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top) % STRIDE_CONV7x7_S2;
+										}
+										if (outer_w_idx != 0) {
+											global_in_feature_w_start_idx += (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left) % STRIDE_CONV7x7_S2;
+										}
+
 										if (i_idx == 0) {
 											if (outer_ic_idx == 0) {
 												//set bias
@@ -266,21 +293,21 @@ void googlenet(
 					{
 						//index and shape of output feature in DRAM
 						int DDR_block_out_feature_c_start_idx = DDR_weight_oc_start_idx;
-						int DDR_block_out_feature_h_start_idx = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top) / STRIDE_CONV7x7_S2;
-						int DDR_block_out_feature_w_start_idx = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left) / STRIDE_CONV7x7_S2;
+						int DDR_block_out_feature_h_start_idx = DIV_CEIL((DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top), STRIDE_CONV7x7_S2);
+						int DDR_block_out_feature_w_start_idx = DIV_CEIL((DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left), STRIDE_CONV7x7_S2);
 						if (outer_h_idx == 0) DDR_block_out_feature_h_start_idx = 0; //handle padding
 						if (outer_w_idx == 0) DDR_block_out_feature_w_start_idx = 0; // handle padding
 						int DDR_block_out_feature_c_num = global_weight_oc_num;
-						int DDR_block_out_feature_h_num = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + global_block_in_feature_h_num) / STRIDE_CONV7x7_S2 - DDR_block_out_feature_h_start_idx;
-						int DDR_block_out_feature_w_num = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + global_block_in_feature_w_num) / STRIDE_CONV7x7_S2 - DDR_block_out_feature_w_start_idx;
+						int DDR_block_out_feature_h_num = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + global_block_in_feature_h_num - KERNEL_HEIGHT_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_h_start_idx;
+						int DDR_block_out_feature_w_num = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + global_block_in_feature_w_num - KERNEL_WIDTH_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_w_start_idx;
 
 						if (outer_h_idx == conv1_7x7_s2_outer_height - 1) {
 							//handle the last iteration of the loop
-							DDR_block_out_feature_h_num = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + conv1_7x7_s2_pad_bottom + global_block_in_feature_h_num) / STRIDE_CONV7x7_S2 - DDR_block_out_feature_h_start_idx;
+							DDR_block_out_feature_h_num = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + conv1_7x7_s2_pad_bottom + global_block_in_feature_h_num - KERNEL_HEIGHT_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_h_start_idx;
 						}
 						if (outer_w_idx == conv1_7x7_s2_outer_width - 1) {
 							//handle the last iteration of the loop						
-							DDR_block_out_feature_w_num = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + conv1_7x7_s2_pad_right + global_block_in_feature_w_num) / STRIDE_CONV7x7_S2 - DDR_block_out_feature_w_start_idx;
+							DDR_block_out_feature_w_num = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + conv1_7x7_s2_pad_right + global_block_in_feature_w_num - KERNEL_WIDTH_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_w_start_idx;
 						}
 						//copy output feature from global BRAM to DRAM
 						for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
