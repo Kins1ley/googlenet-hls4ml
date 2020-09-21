@@ -79,7 +79,7 @@ void googlenet(
 			for (int outer_oc_idx; outer_oc_idx < conv1_7x7_s2_outer_out_channel; outer_oc_idx++) {
 				for (int outer_ic_idx = 0; outer_ic_idx < conv1_7x7_s2_outer_in_channel; outer_ic_idx++) {
 					//calculate the index to copy features and weights.
-					//index of input feature in DRAM
+					//index and shape of input feature in DRAM
 					int DDR_in_feature_h_start_idx = outer_h_idx * conv1_7x7_s2_block_interval_height;
 					int DDR_in_feature_w_start_idx = outer_w_idx * conv1_7x7_s2_block_interval_width;
 					int DDR_in_feature_c_start_idx = outer_ic_idx * conv1_7x7_s2_block_in_channel;
@@ -87,7 +87,7 @@ void googlenet(
 					int global_feature_h_num = conv1_7x7_s2_block_in_height;
 					int global_feature_w_num = conv1_7x7_s2_block_in_height;
 
-					//index of weight in DRAM
+					//index and shape of weight in DRAM
 					int DDR_weight_ic_start_idx = outer_ic_idx * conv1_7x7_s2_block_in_channel;
 					int DDR_weight_oc_start_idx = outer_oc_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7;
 					int global_weight_ic_num = conv1_7x7_s2_block_in_channel;
@@ -110,6 +110,7 @@ void googlenet(
 						global_feature_c_num = conv1_7x7_s2_in_channel - outer_ic_idx * conv1_7x7_s2_block_in_channel;
 						global_weight_ic_num = conv1_7x7_s2_in_channel - outer_ic_idx * conv1_7x7_s2_block_in_channel;
 					}
+					//copy input feature and weight from DRAM to global BRAM
 					nnet::copy_features_DDR2BRAM<DDR_feature_image_in_config, global_feature_config>(image_in, global_feature[0],
 						DDR_in_feature_c_start_idx,  global_feature_c_num,
 						DDR_in_feature_h_start_idx,  global_feature_h_num,
@@ -214,13 +215,13 @@ void googlenet(
 													global_out_feature_w_start_idx, local_out_feature_w_start_idx, local_out_feature_w_num);
 											}
 										}
+										//copy input feature and weight from global BRAM to local BRAM
 										//copy input feature
 										nnet::clear_buffer<conv7x7_s2_local_feature_in_config>(local_feature_in_conv7x7_s2[pe_idx]);
 										nnet::copy_features_g2l<global_feature_config, conv7x7_s2_local_feature_in_config>(global_feature[0],local_feature_in_conv7x7_s2[pe_idx],
 											global_in_feature_c_start_idx, local_in_feature_c_start_idx, local_in_feature_c_num,
 											global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
 											global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
-										//copy weight
 										nnet::copy_weights_g2l<conv7x7_global_weight_config, conv7x7_s2_local_weight_config>(global_weight_7x7[0], local_weight_conv7x7_s2[pe_idx],
 											global_weight_oc_start_idx, local_weight_oc_num,
 											global_weight_ic_start_idx, local_weight_ic_num);
@@ -228,7 +229,7 @@ void googlenet(
 										nnet::conv_output_reuse7x7<conv2d_config_7x7_s2>(local_feature_in_conv7x7_s2[pe_idx], local_weight_conv7x7_s2[pe_idx], local_feature_out_conv7x7_s2[pe_idx]);
 									
 										if (i_idx == inner_in_channel - 1) {
-											//copy result from local BRAM to local BRAM
+											//copy output feature from local BRAM to global BRAM
 											if (outer_ic_idx == conv1_7x7_s2_outer_in_channel - 1) {
 												nnet::relu_inplace<relu_conv2d_config_7x7_s2>(local_feature_out_conv7x7_s2[pe_idx]);
 											}
@@ -264,7 +265,7 @@ void googlenet(
 							//handle the last iteration of the loop						
 							DDR_out_feature_w_num = (DDR_in_feature_w_start_idx + conv1_7x7_s2_pad_left + conv1_7x7_s2_pad_right + global_feature_w_num) / STRIDE_CONV7x7_S2 - DDR_out_feature_w_start_idx;
 						}
-
+						//copy output feature from global BRAM to DRAM
 						nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[1], conv1_7x7_s2_1,
 							DDR_out_feature_c_start_idx, DDR_out_feature_c_num,
 							DDR_out_feature_h_start_idx, DDR_out_feature_h_num,
