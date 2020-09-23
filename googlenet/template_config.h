@@ -241,7 +241,7 @@ struct conv7x7_global_weight_config : nnet::Weight_Memory {
 //local BRAM config
 struct conv7x7_s2_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
-	static const unsigned channel = 1;
+	static const unsigned channel = IN_CHAN_CONV7x7_S2;
 	static const unsigned height = IN_HEIGHT_CONV7x7_S2;
 	static const unsigned width = IN_WIDTH_CONV7x7_S2;
 };
