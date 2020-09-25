@@ -143,19 +143,19 @@ void googlenet(
 					int inner_pad_bottom = (outer_h_idx == (conv1_7x7_s2_outer_height - 1) ? conv1_7x7_s2_pad_bottom : 0);
 					int inner_pad_left = (outer_w_idx == 0 ? conv1_7x7_s2_pad_left : 0);
 					int inner_pad_right = (outer_w_idx == (conv1_7x7_s2_outer_width - 1) ? conv1_7x7_s2_pad_bottom : 0);
-					int inner_height = DIV_CEIL(DIV_CEIL((DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + global_block_in_feature_h_num + inner_pad_bottom - KERNEL_HEIGHT_CONV7x7_S2), (STRIDE_CONV7x7_S2)) + 1
+					int inner_height = DIV_CEIL((DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + global_block_in_feature_h_num + inner_pad_bottom - KERNEL_HEIGHT_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
 						- DIV_CEIL(DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top, STRIDE_CONV7x7_S2),
 						OUT_HEIGHT_CONV7x7_S2);
-					int inner_width = DIV_CEIL(DIV_CEIL((DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + global_block_in_feature_w_num + inner_pad_right - KERNEL_WIDTH_CONV7x7_S2), (STRIDE_CONV7x7_S2)) + 1
+					int inner_width = DIV_CEIL((DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + global_block_in_feature_w_num + inner_pad_right - KERNEL_WIDTH_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
 						- DIV_CEIL(DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left, STRIDE_CONV7x7_S2),
 						OUT_WIDTH_CONV7x7_S2);
 					if (outer_h_idx == 0) {
-						inner_height = DIV_CEIL(DIV_CEIL((DDR_block_in_feature_h_start_idx + global_block_in_feature_h_num + inner_pad_bottom + conv1_7x7_s2_pad_top - KERNEL_HEIGHT_CONV7x7_S2), (STRIDE_CONV7x7_S2)) + 1
+						inner_height = DIV_CEIL((DDR_block_in_feature_h_start_idx + global_block_in_feature_h_num + inner_pad_bottom + conv1_7x7_s2_pad_top - KERNEL_HEIGHT_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
 							- DIV_CEIL(DDR_block_in_feature_h_start_idx, STRIDE_CONV7x7_S2),
 							OUT_HEIGHT_CONV7x7_S2);
 					}
 					if (outer_w_idx == 0) {
-						inner_width = DIV_CEIL(DIV_CEIL((DDR_block_in_feature_w_start_idx + global_block_in_feature_w_num + inner_pad_right + conv1_7x7_s2_pad_left - KERNEL_WIDTH_CONV7x7_S2), (STRIDE_CONV7x7_S2)) + 1
+						inner_width = DIV_CEIL((DDR_block_in_feature_w_start_idx + global_block_in_feature_w_num + inner_pad_right + conv1_7x7_s2_pad_left - KERNEL_WIDTH_CONV7x7_S2) / (STRIDE_CONV7x7_S2)+1
 							- DIV_CEIL(DDR_block_in_feature_w_start_idx, STRIDE_CONV7x7_S2),
 							OUT_WIDTH_CONV7x7_S2);
 					}
@@ -245,11 +245,14 @@ void googlenet(
 										if (i_idx == 0) {
 											if (outer_ic_idx == 0) {
 												//set bias
+												std::cout << "clearing buffer for bias" << std::endl;
 												nnet::clear_buffer<conv7x7_s2_local_feature_out_config>(local_feature_out_conv7x7_s2[pe_idx]);
 												nnet::set_bias<conv7x7_s2_set_bias_config>(local_feature_out_conv7x7_s2[pe_idx], conv1_7x7_s2_b_0 + (conv1_7x7_s2_allocate_bias_start_idx + pe_idx + o_idx * conv1_7x7_s2_inner_pe_parallel + outer_oc_idx * conv1_7x7_s2_block_out_channel));
+												std::cout << "";
 											}
 											else {
 												//restore partial sum
+												std::cout << "clearing buffer for restoring partial sum" << std::endl;
 												nnet::clear_buffer<conv7x7_s2_local_feature_out_config>(local_feature_out_conv7x7_s2[pe_idx]);
 												nnet::copy_features_g2l<global_feature_config, conv7x7_s2_local_feature_out_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_out_conv7x7_s2[pe_idx],
 													global_out_feature_c_start_idx%CHANNEL_FEATURE_GLOBAL, local_out_feature_c_start_idx, local_out_feature_c_num,
@@ -259,6 +262,7 @@ void googlenet(
 										}
 										//copy input feature and weight from global BRAM to local BRAM
 										//copy input feature
+										std::cout << "clearing buffer for input padding" << std::endl;
 										nnet::clear_buffer<conv7x7_s2_local_feature_in_config>(local_feature_in_conv7x7_s2[pe_idx]);
 										nnet::copy_features_g2l<global_feature_config, conv7x7_s2_local_feature_in_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_in_conv7x7_s2[pe_idx],
 											global_in_feature_c_start_idx%CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,
@@ -300,11 +304,11 @@ void googlenet(
 
 						if (outer_h_idx == conv1_7x7_s2_outer_height - 1) {
 							//handle the last iteration of the loop
-							DDR_block_out_feature_h_num = DIV_CEIL((DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + conv1_7x7_s2_pad_bottom + global_block_in_feature_h_num - KERNEL_HEIGHT_CONV7x7_S2), STRIDE_CONV7x7_S2) + 1 - DDR_block_out_feature_h_start_idx;
+							DDR_block_out_feature_h_num = (DDR_block_in_feature_h_start_idx + conv1_7x7_s2_pad_top + conv1_7x7_s2_pad_bottom + global_block_in_feature_h_num - KERNEL_HEIGHT_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_h_start_idx;
 						}
 						if (outer_w_idx == conv1_7x7_s2_outer_width - 1) {
 							//handle the last iteration of the loop						
-							DDR_block_out_feature_w_num = DIV_CEIL((DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + conv1_7x7_s2_pad_right + global_block_in_feature_w_num - KERNEL_WIDTH_CONV7x7_S2), STRIDE_CONV7x7_S2) + 1 - DDR_block_out_feature_w_start_idx;
+							DDR_block_out_feature_w_num = (DDR_block_in_feature_w_start_idx + conv1_7x7_s2_pad_left + conv1_7x7_s2_pad_right + global_block_in_feature_w_num - KERNEL_WIDTH_CONV7x7_S2) / STRIDE_CONV7x7_S2 + 1 - DDR_block_out_feature_w_start_idx;
 						}
 						//copy output feature from global BRAM to DRAM
 						for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
