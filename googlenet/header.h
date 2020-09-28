@@ -52,9 +52,10 @@ const int OUT_HEIGHT_CONV1x1_S1 = 7;
 const int OUT_WIDTH_CONV1x1_S1 = 7;
 const int KERNEL_HEIGHT_CONV1x1_S1 = 1;
 const int KERNEL_WIDTH_CONV1x1_S1 = 1;
+const int STRIDE_CONV1x1_S1 = 1;
 const int IN_HEIGHT_CONV1x1_S1 = (OUT_HEIGHT_CONV1x1_S1 - 1)*STRIDE_CONV1x1_S1 + KERNEL_HEIGHT_CONV1x1_S1;
 const int IN_WIDTH_CONV1x1_S1 = (OUT_WIDTH_CONV1x1_S1 - 1)*STRIDE_CONV1x1_S1 + KERNEL_WIDTH_CONV1x1_S1;
-const int STRIDE_CONV1x1_S1 = 1;
+
 
 //conv3x3_s1
 const int NUM_PE_CONV3x3_S1 = 16;//number of local bram should be consistent with number of PEs
@@ -64,9 +65,10 @@ const int OUT_HEIGHT_CONV3x3_S1 = 7;
 const int OUT_WIDTH_CONV3x3_S1 = 7;
 const int KERNEL_HEIGHT_CONV3x3_S1 = 3;
 const int KERNEL_WIDTH_CONV3x3_S1 = 3;
+const int STRIDE_CONV3x3_S1 = 1;
 const int IN_HEIGHT_CONV3x3_S1 = (OUT_HEIGHT_CONV3x3_S1 - 1)*STRIDE_CONV3x3_S1 + KERNEL_HEIGHT_CONV3x3_S1;
 const int IN_WIDTH_CONV3x3_S1 = (OUT_WIDTH_CONV3x3_S1 - 1)*STRIDE_CONV3x3_S1 + KERNEL_WIDTH_CONV3x3_S1;
-const int STRIDE_CONV3x3_S1 = 1;
+
 
 //conv5x5_s1
 const int NUM_PE_CONV5x5_S1 = 16;//number of local bram should be consistent with number of PEs
@@ -76,9 +78,10 @@ const int OUT_HEIGHT_CONV5x5_S1 = 7;
 const int OUT_WIDTH_CONV5x5_S1 = 7;
 const int KERNEL_HEIGHT_CONV5x5_S1 = 5;
 const int KERNEL_WIDTH_CONV5x5_S1 = 5;
+const int STRIDE_CONV5x5_S1 = 1;
 const int IN_HEIGHT_CONV5x5_S1 = (OUT_HEIGHT_CONV5x5_S1 - 1)*STRIDE_CONV5x5_S1 + KERNEL_HEIGHT_CONV5x5_S1;
 const int IN_WIDTH_CONV5x5_S1 = (OUT_WIDTH_CONV5x5_S1 - 1)*STRIDE_CONV5x5_S1 + KERNEL_WIDTH_CONV5x5_S1;
-const int STRIDE_CONV5x5_S1 = 1;
+
 
 //conv7x7_s2
 const int NUM_PE_CONV7x7_S2 = 2;//number of local bram should be consistent with number of PEs
@@ -88,9 +91,10 @@ const int OUT_HEIGHT_CONV7x7_S2 = 7;
 const int OUT_WIDTH_CONV7x7_S2 = 7;
 const int KERNEL_HEIGHT_CONV7x7_S2 = 7;
 const int KERNEL_WIDTH_CONV7x7_S2 = 7;
+const int STRIDE_CONV7x7_S2 = 2;
 const int IN_HEIGHT_CONV7x7_S2 = (OUT_HEIGHT_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_HEIGHT_CONV7x7_S2;
 const int IN_WIDTH_CONV7x7_S2 = (OUT_WIDTH_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_WIDTH_CONV7x7_S2;
-const int STRIDE_CONV7x7_S2 = 2;
+
 
 ///config of pooling operation
 //maxpool3x3_s1

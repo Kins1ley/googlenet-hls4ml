@@ -312,13 +312,13 @@ struct DDR_feature_pool1_3x3_s2_1_config : nnet::Feature_Memory {
 	static const unsigned width = pool1_3x3_s2_out_width;
 };
 
-struct pool3x3_s2_local_feature_in_config : nnet::Feature_Memory {
+struct MAXPOOL3x3_S2_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = N_CHAN_MAXPOOL3x3_S2;
 	static const unsigned height = IN_HEIGHT_MAXPOOL3x3_S2;
 	static const unsigned width = IN_WIDTH_MAXPOOL3x3_S2;
 };
-struct pool3x3_s2_local_feature_out_config : nnet::Feature_Memory {
+struct MAXPOOL3x3_S2_local_feature_out_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = N_CHAN_MAXPOOL3x3_S2;
 	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
