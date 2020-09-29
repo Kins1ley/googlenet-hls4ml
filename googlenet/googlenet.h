@@ -313,12 +313,12 @@ void googlenet(
 						//copy output feature from global BRAM to DRAM
 						for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 							if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-								nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], conv1_7x7_s2_1,
+								nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx+ global_out_feature_idx], conv1_7x7_s2_1,
 									DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 									DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
 									DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 							else
-								nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], conv1_7x7_s2_1,
+								nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_1_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx+ global_out_feature_idx], conv1_7x7_s2_1,
 									DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 									DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
 									DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
@@ -396,20 +396,20 @@ void googlenet(
 						- DIV_CEIL(DDR_block_in_feature_w_start_idx, STRIDE_MAXPOOL3x3_S2),
 						OUT_WIDTH_MAXPOOL3x3_S2);
 				}
-				int inner_channel = DIV_CEIL(global_block_in_feature_c_num, pool1_3x3_s2_inner_pe_parallel*N_CHAN_MAXPOOL3x3_S2);
+				int inner_channel = DIV_CEIL(global_block_in_feature_c_num, pool1_3x3_s2_inner_pe_parallel * N_CHAN_MAXPOOL3x3_S2);
 				//do inner loop
 				for (int h_idx = 0; h_idx < inner_height; h_idx++) {
 					for (int w_idx = 0; w_idx < inner_width; w_idx++) {
 						for (int c_idx = 0; c_idx < inner_channel; c_idx++) {
 							int inner_pe_parallel = pool1_3x3_s2_inner_pe_parallel;
-							if (c_idx == inner_channel - 1) inner_pe_parallel = global_block_in_feature_c_num - c_idx * pool1_3x3_s2_inner_pe_parallel;
+							if (c_idx == inner_channel - 1) inner_pe_parallel = DIV_CEIL(global_block_in_feature_c_num - c_idx * pool1_3x3_s2_inner_pe_parallel * N_CHAN_MAXPOOL3x3_S2, N_CHAN_MAXPOOL3x3_S2);
 #pragma HLS pipeline
 							for (int pe_idx = 0; pe_idx < inner_pe_parallel; pe_idx++) {
 #pragma HLS unroll
 								//index of input feature in global BRAM
-								int global_in_feature_c_start_idx = c_idx * N_CHAN_MAXPOOL3x3_S2;
-								int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_MAXPOOL3x3_S2*STRIDE_MAXPOOL3x3_S2 - inner_pad_top; //
-								int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_MAXPOOL3x3_S2*STRIDE_MAXPOOL3x3_S2 - inner_pad_left;//
+								int global_in_feature_c_start_idx = (c_idx * pool1_3x3_s2_inner_pe_parallel + pe_idx) * N_CHAN_MAXPOOL3x3_S2;
+								int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_MAXPOOL3x3_S2 * STRIDE_MAXPOOL3x3_S2 - inner_pad_top; //
+								int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_MAXPOOL3x3_S2 * STRIDE_MAXPOOL3x3_S2 - inner_pad_left;//
 
 								//index and shape of input feature in local BRAM
 								int local_in_feature_c_start_idx = 0;
@@ -420,7 +420,7 @@ void googlenet(
 								int local_in_feature_w_num = IN_WIDTH_MAXPOOL3x3_S2;
 
 								//index of output feature in global BRAM
-								int global_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx;
+								int global_out_feature_c_start_idx = (c_idx * pool1_3x3_s2_inner_pe_parallel + pe_idx) * N_CHAN_MAXPOOL3x3_S2;
 								int global_out_feature_h_start_idx = h_idx * OUT_HEIGHT_MAXPOOL3x3_S2;
 								int global_out_feature_w_start_idx = w_idx * OUT_WIDTH_MAXPOOL3x3_S2;
 
@@ -428,7 +428,7 @@ void googlenet(
 								int local_out_feature_c_start_idx = 0;
 								int local_out_feature_h_start_idx = 0;
 								int local_out_feature_w_start_idx = 0;
-								int local_out_feature_c_num = global_block_in_feature_c_num;
+								int local_out_feature_c_num = N_CHAN_MAXPOOL3x3_S2;
 								int local_out_feature_h_num = OUT_HEIGHT_MAXPOOL3x3_S2;
 								int local_out_feature_w_num = OUT_WIDTH_MAXPOOL3x3_S2;
 
@@ -441,7 +441,7 @@ void googlenet(
 								}
 								else if (h_idx == inner_height - 1) {
 									//handle the last iteration of the loop and padding
-									local_in_feature_h_num = global_block_in_feature_h_num + inner_pad_top - h_idx * OUT_HEIGHT_MAXPOOL3x3_S2*STRIDE_MAXPOOL3x3_S2;
+									local_in_feature_h_num = global_block_in_feature_h_num + inner_pad_top - h_idx * OUT_HEIGHT_MAXPOOL3x3_S2 * STRIDE_MAXPOOL3x3_S2;
 								}
 
 								if (w_idx == 0) {
@@ -452,11 +452,12 @@ void googlenet(
 								}
 								else if (w_idx == inner_width - 1) {
 									//handle the last iteration of the loop and padding
-									local_in_feature_w_num = global_block_in_feature_w_num + inner_pad_left - w_idx * OUT_WIDTH_MAXPOOL3x3_S2*STRIDE_MAXPOOL3x3_S2;
+									local_in_feature_w_num = global_block_in_feature_w_num + inner_pad_left - w_idx * OUT_WIDTH_MAXPOOL3x3_S2 * STRIDE_MAXPOOL3x3_S2;
 								}
-								if (c_idx == inner_channel - 1) {
+								if ((c_idx == inner_channel - 1) && (pe_idx == inner_pe_parallel - 1)) {
 									//handle the last iteration of the loop
-									local_in_feature_c_num = global_block_in_feature_c_num - c_idx * N_CHAN_MAXPOOL3x3_S2;
+									local_out_feature_c_num = global_block_in_feature_c_num - (c_idx * pool1_3x3_s2_inner_pe_parallel + pe_idx) * N_CHAN_MAXPOOL3x3_S2;
+									local_in_feature_c_num = global_block_in_feature_c_num - (c_idx * pool1_3x3_s2_inner_pe_parallel + pe_idx) * N_CHAN_MAXPOOL3x3_S2;
 								}
 								// handle the situation that convolution does not start from the first element
 								if (outer_h_idx != 0) {
@@ -468,29 +469,26 @@ void googlenet(
 
 								//copy input feature from global BRAM to local BRAM
 								//copy input feature
-								std::cout << "clearing buffer for input padding" << std::endl;
+								//std::cout << "clearing buffer for input padding" << std::endl;
 								nnet::clear_buffer<MAXPOOL3x3_S2_local_feature_in_config>(local_feature_in_maxpool3x3_s2[pe_idx]);
 								nnet::copy_features_g2l<global_feature_config, MAXPOOL3x3_S2_local_feature_in_config>(global_feature[pool1_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_in_maxpool3x3_s2[pe_idx],
-									global_in_feature_c_start_idx%CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,
+									global_in_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,
 									global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
 									global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
 								//call PE and do calculation
-								nnet::pool3x3<pool2d_config_max3x3_s2>(local_feature_in_maxpool3x3_s2[pe_idx], local_feature_out_maxpool3x3_s2[pe_idx][0]);
+								nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_maxpool3x3_s2[pe_idx], local_feature_out_maxpool3x3_s2[pe_idx]);
 
-								if (c_idx == inner_channel - 1) {
-									//copy output feature from local BRAM to global BRAM
-									nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_maxpool3x3_s2[pe_idx], global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
-										global_out_feature_c_start_idx%CHANNEL_FEATURE_GLOBAL, local_out_feature_c_num,
-										global_out_feature_h_start_idx, local_out_feature_h_num,
-										global_out_feature_w_start_idx, local_out_feature_w_num);
-								}
+								//copy output feature from local BRAM to global BRAM
+								nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_maxpool3x3_s2[pe_idx], global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
+									global_out_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_out_feature_c_num,
+									global_out_feature_h_start_idx, local_out_feature_h_num,
+									global_out_feature_w_start_idx, local_out_feature_w_num);
+
 							}
-								
 						}
 					}
 				}//end inner loop
 				//copy out feature from BRAM to DRAM
-				if (outer_ic_idx == pool1_3x3_s2_outer_in_channel - 1)
 				{
 					//index and shape of output feature in DRAM
 					int DDR_block_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx;
@@ -513,18 +511,18 @@ void googlenet(
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx], pool1_3x3_s2_1,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], pool1_3x3_s2_1,
 								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
 								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx], pool1_3x3_s2_1,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], pool1_3x3_s2_1,
 								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
 								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
-				
+
 			}// end outer_ic loop
 		}
 	}
