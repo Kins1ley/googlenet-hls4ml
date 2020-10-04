@@ -1,4 +1,4 @@
-/////////////top function /////////////
+/////////////top_function/////////////
 //pool1_3x3_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -196,9 +196,9 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
         }// end outer_ic loop
     }
 }
-/////////////top function /////////////
+/////////////top_function/////////////
 
-/////////////template_config /////////////
+/////////////template_config/////////////
 ///pool1_3x3_s2
 struct DDR_feature_pool1_3x3_s2_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
@@ -219,9 +219,9 @@ struct MAXPOOL3x3_S2_local_feature_out_config : nnet::Feature_Memory {
 	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
 	static const unsigned width = OUT_WIDTH_MAXPOOL3x3_S2;
 };
-/////////////template_config /////////////
+/////////////template_config/////////////
 
-/////////////allocate_config /////////////
+/////////////allocate_config/////////////
 //pool1_3x3_s2
 ///configuration
 const int pool1_3x3_s2_allocate_global_in_feature_start_idx = 0;
@@ -246,4 +246,4 @@ const int pool1_3x3_s2_block_in_channel = pool1_3x3_s2_allocate_global_in_featur
 const int pool1_3x3_s2_inner_pe_parallel = NUM_PE_MAXPOOL3x3_S2;
 ///dim of kernels
 const int pool1_3x3_s2_block_out_channel = pool1_3x3_s2_allocate_global_out_feature_num * CHANNEL_FEATURE_GLOBAL;
-/////////////allocate_config /////////////
+/////////////allocate_config/////////////

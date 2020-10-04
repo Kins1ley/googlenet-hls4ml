@@ -12,6 +12,10 @@ layer_config_dict["conv_layer_input"]="image_in"
 layer_config_dict["conv_layer_output"]="conv1_7x7_s2_1"
 
 def generate_conv_template():
+    """
+    generate the template file
+    :return:
+    """
     with open("./origin_code/conv_template_origin.h") as f:
         tmp_file=open("./origin_code/conv_template_tmp.h","w")
         while True:
@@ -38,6 +42,13 @@ def generate_conv_template():
     os.rename("./origin_code/conv_template_tmp.h", "./templates/conv_template.h")
 
 def generate_conv(layer_config_dict,template_name="./templates/conv_template.h",out_file=None):
+    """
+    generate code according to the template file
+    :param layer_config_dict:
+    :param template_name:
+    :param out_file: if None, show the result on the screen
+    :return:
+    """
     with open(template_name) as f:
         while True:
             text = f.readline()

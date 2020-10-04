@@ -8,4 +8,4 @@
 ## TODO
 1. 三个文件，googlenet.h，allocate_config.h和template_config.h都需要写入。目前三个文件需要的代码段的模板保存在一个文件"./templates/conv_template.h"里，generate_conv函数需要能够分别把代码段写入到三个文件里。
 2. 调用generate_conv函数自动写入googlenet.h等文件生成整个googlenet，尽量减少需要手动填充的部分。
-3. 除了conv和pool，还有一些其他的函数，由于计算量不大，所以等我们把googlenet的大框架写完再把这些函数补上。
+3. 除了conv和pool，还有一些其他的函数，由于计算量不大，可能不需要考虑切分，所以等我们把googlenet的大框架写完再把这些函数补上。

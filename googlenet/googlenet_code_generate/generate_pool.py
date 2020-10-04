@@ -10,6 +10,10 @@ layer_config_dict["pool_layer_input"]="conv1_7x7_s2_1"
 layer_config_dict["pool_layer_output"]="pool1_3x3_s2_1"
 
 def generate_pool_template():
+    """
+    generate the template file
+    :return:
+    """
     with open("./origin_code/pool_template_origin.h") as f:
         tmp_file=open("./origin_code/pool_template_tmp.h","w")
         while True:
@@ -33,6 +37,13 @@ def generate_pool_template():
     os.rename("./origin_code/pool_template_tmp.h", "./templates/pool_template.h")
 
 def generate_pool(layer_config_dict,template_name="./templates/pool_template.h",out_file=None):
+    """
+    generate code according to the template file
+    :param layer_config_dict:
+    :param template_name:
+    :param out_file: if None, show the result on the screen
+    :return:
+    """
     with open(template_name) as f:
         while True:
             text = f.readline()

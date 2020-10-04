@@ -1,4 +1,4 @@
-/////////////top function /////////////
+/////////////top_function/////////////
 //conv1_7x7_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -260,9 +260,9 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
         }
     }
 }
-/////////////top function /////////////
+/////////////top_function/////////////
 
-/////////////template_config /////////////
+/////////////template_config/////////////
 ///conv1_7x7_s2
 struct DDR_feature_image_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
@@ -288,9 +288,9 @@ struct DDR_feature_conv1_7x7_s2_1_config : nnet::Feature_Memory {
 	static const unsigned height = conv1_7x7_s2_out_height;
 	static const unsigned width = conv1_7x7_s2_out_width;
 };
-/////////////template_config /////////////
+/////////////template_config/////////////
 
-/////////////allocate_config /////////////
+/////////////allocate_config/////////////
 //conv1_7x7_s2
 ///configuration
 const int conv1_7x7_s2_allocate_global_in_feature_start_idx = 0;
@@ -319,4 +319,4 @@ const int conv1_7x7_s2_inner_pe_parallel = NUM_PE_CONV7x7_S2;
 ///dim of kernels
 const int conv1_7x7_s2_block_out_channel = MIN(conv1_7x7_s2_allocate_global_out_feature_num*CHANNEL_FEATURE_GLOBAL , conv1_7x7_s2_allocate_global_weight_7x7_num*OUT_CHANNEL_WEIGHT_GLOBAL_7x7);
 const int conv1_7x7_s2_outer_out_channel = DIV_CEIL(conv1_7x7_s2_kernel_num, conv1_7x7_s2_block_out_channel);//outer loop
-/////////////allocate_config /////////////
+/////////////allocate_config/////////////
