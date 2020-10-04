@@ -59,7 +59,28 @@ const int pool1_3x3_s2_inner_pe_parallel = NUM_PE_MAXPOOL3x3_S2;
 ///dim of kernels
 const int pool1_3x3_s2_block_out_channel = pool1_3x3_s2_allocate_global_out_feature_num*CHANNEL_FEATURE_GLOBAL;
 
-
+//pool1_norm1_1
+///configuration
+const int pool1_norm1_allocate_global_in_feature_start_idx = 0;
+const int pool1_norm1_allocate_global_in_feature_num = 1;//multi global BRAM is not supportted yet
+const int pool1_norm1_allocate_global_out_feature_start_idx = 1;
+const int pool1_norm1_allocate_global_out_feature_num = 1;
+///overlapped features between blocks
+const int pool1_norm1_block_overlap_channel = 2 * pool1_norm1_deepth_radius;
+///number of blocks(the dims of the outer loop)
+const int pool1_norm1_outer_in_channel = DIV_CEIL(pool1_norm1_in_channel, pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_deepth_radius));
+const int pool1_norm1_outer_height = DIV_CEIL(pool1_norm1_in_height, HEIGHT_FEATURE_GLOBAL);
+const int pool1_norm1_outer_width = DIV_CEIL(pool1_norm1_in_width, WIDTH_FEATURE_GLOBAL);
+///interval between blocks
+const int pool1_norm1_block_interval_channel = pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_deepth_radius);//the spacing between blocks
+const int pool1_norm1_block_interval_height = HEIGHT_FEATURE_GLOBAL;
+const int pool1_norm1_block_interval_width = WIDTH_FEATURE_GLOBAL;
+///dim of blocks
+const int pool1_norm1_block_in_height = pool1_norm1_block_interval_height;
+const int pool1_norm1_block_in_width = pool1_norm1_block_interval_height;
+const int pool1_norm1_block_in_channel = pool1_norm1_allocate_global_in_feature_num * CHANNEL_FEATURE_GLOBAL;
+///set parallism
+const int pool1_norm1_inner_pe_parallel = NUM_PE_LRN;//prallelism not supported
 
 
 #endif

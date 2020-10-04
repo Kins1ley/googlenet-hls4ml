@@ -274,6 +274,21 @@ struct conv3x3_s2_local_feature_out_config : nnet::Feature_Memory {
 	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
 	static const unsigned width = OUT_WIDTH_MAXPOOL3x3_S2;
 };
+
+struct LRN_local_feature_in_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = N_CHAN_LRN;
+	static const unsigned height = IN_HEIGHT_LRN;
+	static const unsigned width = IN_WIDTH_LRN;
+};
+
+struct LRN_local_feature_out_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = N_CHAN_LRN;
+	static const unsigned height = OUT_HEIGHT_LRN;
+	static const unsigned width = OUT_WIDTH_LRN;
+};
+
 //template config for layers
 
 /////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
@@ -324,7 +339,13 @@ struct MAXPOOL3x3_S2_local_feature_out_config : nnet::Feature_Memory {
 	static const unsigned height = OUT_HEIGHT_MAXPOOL3x3_S2;
 	static const unsigned width = OUT_WIDTH_MAXPOOL3x3_S2;
 };
-
+///pool1_norm1
+struct DDR_feature_pool1_norm1_1_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = pool1_norm1_out_channel;
+	static const unsigned height = pool1_norm1_out_height;
+	static const unsigned width = pool1_norm1_out_width;
+};
 
 /////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
 

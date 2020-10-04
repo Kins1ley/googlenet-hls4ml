@@ -166,6 +166,16 @@ const int pool1_3x3_s2_out_height = 56;
 const int pool1_3x3_s2_out_width = 56;
 const int pool1_3x3_s2_stride = 2;
 
+
+///layer pool1_norm1
+const int pool1_norm1_in_channel = 8;
+const int pool1_norm1_in_height = 2;
+const int pool1_norm1_in_width = 2;
+const int pool1_norm1_out_channel = pool1_norm1_in_channel;
+const int pool1_norm1_out_height = pool1_norm1_in_height;
+const int pool1_norm1_out_width = pool1_norm1_in_width;
+const int pool1_norm1_deepth_radius = 1;
+
 ///layer conv2_3x3_reduce
 const int conv2_3x3_reduce_in_channel = 3;
 const int conv2_3x3_reduce_in_height = 224;
