@@ -6,19 +6,19 @@ allocate_config_mark="/////////////allocate_config/////////////"
 
 
 layer_config_dict={"left_bracket":"{","right_bracket":"}"}
-layer_config_dict["pool_layer_name"]="pool1_3x3_s2"
-layer_config_dict["pool_layer_type"]="MAXPOOL3x3_S2"
-layer_config_dict["pool_pe_name"]="pool3x3"
-layer_config_dict["pool_layer_input"]="conv1_7x7_s2_1"
-layer_config_dict["pool_layer_output"]="pool1_3x3_s2_1"
+layer_config_dict["lrn_layer_name"]="pool1_norm1"
+layer_config_dict["lrn_layer_type"]="LRN"
+layer_config_dict["lrn_pe_name"]="LRN"
+layer_config_dict["lrn_layer_input"]="pool1_3x3_s2_1"
+layer_config_dict["lrn_layer_output"]="pool1_norm1_1"
 
-def generate_pool_template():
+def generate_lrn_template():
     """
     generate the template file
     :return:
     """
-    with open("./origin_code/pool_template_origin.h") as f:
-        tmp_file=open("./origin_code/pool_template_tmp.h","w")
+    with open("./origin_code/lrn_template_origin.h") as f:
+        tmp_file=open("./origin_code/lrn_template_tmp.h","w")
         while True:
             text = f.readline()
             if not text:
@@ -27,19 +27,20 @@ def generate_pool_template():
             text = text.replace("}","right_bracket}")
             text = text.replace("{left_bracket", "{left_bracket}")
             text = text.replace("right_bracket}", "{right_bracket}")
-            text = text.replace("pool1_3x3_s2_1", "{pool_layer_output}")
-            text = text.replace("conv1_7x7_s2_1", "{pool_layer_input}")
-            text = text.replace("pool1_3x3_s2","{pool_layer_name}")
-            text = text.replace("MAXPOOL3x3_S2","{pool_layer_type}")
-            text = text.replace("pool3x3", "{pool_pe_name}")
+            text = text.replace("pool1_norm1_1", "{lrn_layer_output}")
+            text = text.replace("pool1_3x3_s2_1", "{lrn_layer_input}")
+            text = text.replace("pool1_norm1","{lrn_layer_name}")
+            text = text.replace("LRN","{lrn_layer_type}")
+            #text = text.replace("LRN", "{lrn_pe_name}")
+
 
             print(text,file=tmp_file,end="")
             #print(text)
         tmp_file.close()
-    #os.remove("pool_template.h")
-    os.rename("./origin_code/pool_template_tmp.h", "./function_templates/pool_template.h")
+    #os.remove("lrn_template.h")
+    os.rename("./origin_code/lrn_template_tmp.h", "./function_templates/lrn_template.h")
 
-def generate_pool(layer_config_dict,template_name="./function_templates/pool_template.h",out_file=None,part="top_function"):
+def generate_lrn(layer_config_dict,template_name="./function_templates/lrn_template.h",out_file=None,part="top_function"):
     """
     generate code according to the template file
     :param layer_config_dict:
@@ -56,7 +57,6 @@ def generate_pool(layer_config_dict,template_name="./function_templates/pool_tem
             text = f.readline()
             if not text:
                 break
-            #print(text)
             if top_function_mark in text:
                 if not found_top_function:
                     found_top_function=True
@@ -84,21 +84,24 @@ def generate_pool(layer_config_dict,template_name="./function_templates/pool_tem
                 if out_file is not None:
                     print(text.format(left_bracket=layer_config_dict["left_bracket"],
                                       right_bracket=layer_config_dict["right_bracket"],
-                                      pool_layer_name=layer_config_dict["pool_layer_name"],
-                                      pool_layer_type=layer_config_dict["pool_layer_type"],
-                                      pool_pe_name=layer_config_dict["pool_pe_name"],
-                                      pool_layer_input=layer_config_dict["pool_layer_input"],
-                                      pool_layer_output=layer_config_dict["pool_layer_output"]
-                                      ), end="",file=out_file)
+                                      lrn_layer_name=layer_config_dict["lrn_layer_name"],
+                                      lrn_layer_type=layer_config_dict["lrn_layer_type"],
+                                      lrn_pe_name=layer_config_dict["lrn_pe_name"],
+                                      lrn_layer_input=layer_config_dict["lrn_layer_input"],
+                                      lrn_layer_output=layer_config_dict["lrn_layer_output"]
+                                      ), end="", file=out_file)
                 else:
                     print(text.format(left_bracket=layer_config_dict["left_bracket"],
                                       right_bracket=layer_config_dict["right_bracket"],
-                                      pool_layer_name=layer_config_dict["pool_layer_name"],
-                                      pool_layer_type=layer_config_dict["pool_layer_type"],
-                                      pool_pe_name=layer_config_dict["pool_pe_name"],
-                                      pool_layer_input=layer_config_dict["pool_layer_input"],
-                                      pool_layer_output=layer_config_dict["pool_layer_output"]
+                                      lrn_layer_name=layer_config_dict["lrn_layer_name"],
+                                      lrn_layer_type=layer_config_dict["lrn_layer_type"],
+                                      lrn_pe_name=layer_config_dict["lrn_pe_name"],
+                                      lrn_layer_input=layer_config_dict["lrn_layer_input"],
+                                      lrn_layer_output=layer_config_dict["lrn_layer_output"]
                                       ), end="")
+
+
+
 if __name__ == "__main__":
-    generate_pool_template()
-    generate_pool(layer_config_dict)
+    generate_lrn_template()
+    generate_lrn(layer_config_dict)
