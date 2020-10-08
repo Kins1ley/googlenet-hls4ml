@@ -18,3 +18,7 @@ outer_loop不考虑padding
 4. 调用PE进行计算。
 5. 在PE处理完整个block的in_channel之后，将结果从local BRAM拷贝回global BRAM。若所有的in_channel处理完毕，在拷贝回global BRAM之前还需要进行relu
 6. 将结果从global BRAM拷贝回DRAM
+
+## update 10/08/2020
+这部分代码只有前几层的。整个googlenet代码比较大，所以用python代码生成。
+代码在googlenet_code_generate文件夹里
