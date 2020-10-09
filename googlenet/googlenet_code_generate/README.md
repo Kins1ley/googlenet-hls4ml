@@ -1,4 +1,6 @@
 # googlenet-HLS4ML code generator
+用法
+> python generate_googlenet.py
 ## generate_conv.py
 1. layer_config_dict的创建参照开头的几行。
 2. 把layer_config_dict作为参数传入generate_conv函数，函数就可以根据function_template文件夹里的模板生成对应的卷积代码。
