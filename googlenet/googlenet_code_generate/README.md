@@ -12,7 +12,7 @@
 依据onnx文件填充卷积层，池化层和LRN层的模板，并写入googlenet.h，allocate_config.h和template_config.h。
 
 ## TODO
-1. 最后一个全连接层也当作卷积层处理。
-2. 在generate_googlenet.py里写入header.h
+1. 最后一个全连接层也当作卷积层处理
+2. 编写testbench
 3. 为整个googlenet做csim
 
