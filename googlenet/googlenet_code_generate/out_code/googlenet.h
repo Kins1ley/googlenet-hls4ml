@@ -15,28 +15,97 @@ void googlenet(
 	FIX_INT8 DDR_weight3x3[DDR_WEIGHT_3x3_OUT_CHANNEL][DDR_WEIGHT_3x3_IN_CHANNEL][3][3],
 	FIX_INT8 DDR_weight1x1[DDR_WEIGHT_1x1_OUT_CHANNEL][DDR_WEIGHT_1x1_IN_CHANNEL][1][1],
 	FIX_INT20 DDR_bias[DDR_BIAS_NUM],
-	FIX_INT20 conv1_7x7_s2_1[conv1_7x7_s2_out_channel][conv1_7x7_s2_out_height][conv1_7x7_s2_out_width],
-	FIX_INT20 pool1_3x3_s2_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
-	FIX_INT20 pool1_norm1_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
-	FIX_INT20 pool3_3x3_s2[pool3_3x3_s2_out_channel][pool3_3x3_s2_out_height][pool3_3x3_s2_out_width],
+	/////DRAM_insert/////
+FIX_INT20 conv1_7x7_s2_1[conv1_7x7_s2_out_channel][conv1_7x7_s2_out_height][conv1_7x7_s2_out_width],
+FIX_INT20 pool1_3x3_s2_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
+FIX_INT20 pool1_norm1_1[pool1_norm1_out_channel][pool1_norm1_out_height][pool1_norm1_out_width],
+FIX_INT20 conv2_3x3_reduce_1[conv2_3x3_reduce_out_channel][conv2_3x3_reduce_out_height][conv2_3x3_reduce_out_width],
+FIX_INT20 conv2_3x3_1[conv2_3x3_out_channel][conv2_3x3_out_height][conv2_3x3_out_width],
+FIX_INT20 conv2_norm2_1[conv2_norm2_out_channel][conv2_norm2_out_height][conv2_norm2_out_width],
+FIX_INT20 pool2_3x3_s2_1[pool2_3x3_s2_out_channel][pool2_3x3_s2_out_height][pool2_3x3_s2_out_width],
+FIX_INT20 inception_3a_output_1[inception_3a_1x1_out_channel+inception_3a_3x3_out_channel+inception_3a_5x5_out_channel+inception_3a_pool_out_channel+inception_3a_pool_proj_out_channel][inception_3a_1x1_out_height][inception_3a_1x1_out_width],
+FIX_INT20 inception_3a_3x3_reduce_1[inception_3a_3x3_reduce_out_channel][inception_3a_3x3_reduce_out_height][inception_3a_3x3_reduce_out_width],
+FIX_INT20 inception_3a_5x5_reduce_1[inception_3a_5x5_reduce_out_channel][inception_3a_5x5_reduce_out_height][inception_3a_5x5_reduce_out_width],
+FIX_INT20 inception_3b_output_1[inception_3b_1x1_out_channel+inception_3b_3x3_out_channel+inception_3b_5x5_out_channel+inception_3b_pool_out_channel+inception_3b_pool_proj_out_channel][inception_3b_1x1_out_height][inception_3b_1x1_out_width],
+FIX_INT20 inception_3b_3x3_reduce_1[inception_3b_3x3_reduce_out_channel][inception_3b_3x3_reduce_out_height][inception_3b_3x3_reduce_out_width],
+FIX_INT20 inception_3b_5x5_reduce_1[inception_3b_5x5_reduce_out_channel][inception_3b_5x5_reduce_out_height][inception_3b_5x5_reduce_out_width],
+FIX_INT20 pool3_3x3_s2_1[pool3_3x3_s2_out_channel][pool3_3x3_s2_out_height][pool3_3x3_s2_out_width],
+FIX_INT20 inception_4a_output_1[inception_4a_1x1_out_channel+inception_4a_3x3_out_channel+inception_4a_5x5_out_channel+inception_4a_pool_out_channel+inception_4a_pool_proj_out_channel][inception_4a_1x1_out_height][inception_4a_1x1_out_width],
+FIX_INT20 inception_4a_3x3_reduce_1[inception_4a_3x3_reduce_out_channel][inception_4a_3x3_reduce_out_height][inception_4a_3x3_reduce_out_width],
+FIX_INT20 inception_4a_5x5_reduce_1[inception_4a_5x5_reduce_out_channel][inception_4a_5x5_reduce_out_height][inception_4a_5x5_reduce_out_width],
+FIX_INT20 inception_4b_output_1[inception_4b_1x1_out_channel+inception_4b_3x3_out_channel+inception_4b_5x5_out_channel+inception_4b_pool_out_channel+inception_4b_pool_proj_out_channel][inception_4b_1x1_out_height][inception_4b_1x1_out_width],
+FIX_INT20 inception_4b_3x3_reduce_1[inception_4b_3x3_reduce_out_channel][inception_4b_3x3_reduce_out_height][inception_4b_3x3_reduce_out_width],
+FIX_INT20 inception_4b_5x5_reduce_1[inception_4b_5x5_reduce_out_channel][inception_4b_5x5_reduce_out_height][inception_4b_5x5_reduce_out_width],
+FIX_INT20 inception_4c_output_1[inception_4c_1x1_out_channel+inception_4c_3x3_out_channel+inception_4c_5x5_out_channel+inception_4c_pool_out_channel+inception_4c_pool_proj_out_channel][inception_4c_1x1_out_height][inception_4c_1x1_out_width],
+FIX_INT20 inception_4c_3x3_reduce_1[inception_4c_3x3_reduce_out_channel][inception_4c_3x3_reduce_out_height][inception_4c_3x3_reduce_out_width],
+FIX_INT20 inception_4c_5x5_reduce_1[inception_4c_5x5_reduce_out_channel][inception_4c_5x5_reduce_out_height][inception_4c_5x5_reduce_out_width],
+FIX_INT20 inception_4d_output_1[inception_4d_1x1_out_channel+inception_4d_3x3_out_channel+inception_4d_5x5_out_channel+inception_4d_pool_out_channel+inception_4d_pool_proj_out_channel][inception_4d_1x1_out_height][inception_4d_1x1_out_width],
+FIX_INT20 inception_4d_3x3_reduce_1[inception_4d_3x3_reduce_out_channel][inception_4d_3x3_reduce_out_height][inception_4d_3x3_reduce_out_width],
+FIX_INT20 inception_4d_5x5_reduce_1[inception_4d_5x5_reduce_out_channel][inception_4d_5x5_reduce_out_height][inception_4d_5x5_reduce_out_width],
+FIX_INT20 inception_4e_output_1[inception_4e_1x1_out_channel+inception_4e_3x3_out_channel+inception_4e_5x5_out_channel+inception_4e_pool_out_channel+inception_4e_pool_proj_out_channel][inception_4e_1x1_out_height][inception_4e_1x1_out_width],
+FIX_INT20 inception_4e_3x3_reduce_1[inception_4e_3x3_reduce_out_channel][inception_4e_3x3_reduce_out_height][inception_4e_3x3_reduce_out_width],
+FIX_INT20 inception_4e_5x5_reduce_1[inception_4e_5x5_reduce_out_channel][inception_4e_5x5_reduce_out_height][inception_4e_5x5_reduce_out_width],
+FIX_INT20 pool4_3x3_s2_1[pool4_3x3_s2_out_channel][pool4_3x3_s2_out_height][pool4_3x3_s2_out_width],
+FIX_INT20 inception_5a_output_1[inception_5a_1x1_out_channel+inception_5a_3x3_out_channel+inception_5a_5x5_out_channel+inception_5a_pool_out_channel+inception_5a_pool_proj_out_channel][inception_5a_1x1_out_height][inception_5a_1x1_out_width],
+FIX_INT20 inception_5a_3x3_reduce_1[inception_5a_3x3_reduce_out_channel][inception_5a_3x3_reduce_out_height][inception_5a_3x3_reduce_out_width],
+FIX_INT20 inception_5a_5x5_reduce_1[inception_5a_5x5_reduce_out_channel][inception_5a_5x5_reduce_out_height][inception_5a_5x5_reduce_out_width],
+FIX_INT20 inception_5b_output_1[inception_5b_1x1_out_channel+inception_5b_3x3_out_channel+inception_5b_5x5_out_channel+inception_5b_pool_out_channel+inception_5b_pool_proj_out_channel][inception_5b_1x1_out_height][inception_5b_1x1_out_width],
+FIX_INT20 inception_5b_3x3_reduce_1[inception_5b_3x3_reduce_out_channel][inception_5b_3x3_reduce_out_height][inception_5b_3x3_reduce_out_width],
+FIX_INT20 inception_5b_5x5_reduce_1[inception_5b_5x5_reduce_out_channel][inception_5b_5x5_reduce_out_height][inception_5b_5x5_reduce_out_width],
+FIX_INT20 pool5_7x7_s1_1[pool5_7x7_s1_out_channel][pool5_7x7_s1_out_height][pool5_7x7_s1_out_width],
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
 
 
-
-	FIX_INT20 pool4_3x3_s2[pool4_3x3_s2_out_channel][pool4_3x3_s2_out_height][pool4_3x3_s2_out_width],
 	/////////////////////////////// inception(5a) -> linear              ////////////////////////////(Qi)
 
 
 	FIX_INT20 out[OU]
 
 ) {
-#pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=inputs					offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=data_0					offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_OUT_CHANNEL*DDR_WEIGHT_7x7_IN_CHANNEL*7*7								port=DDR_weight7x7			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_OUT_CHANNEL*DDR_WEIGHT_5x5_IN_CHANNEL*5*5								port=DDR_weight5x5			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_OUT_CHANNEL*DDR_WEIGHT_3x3_IN_CHANNEL*3*3								port=DDR_weight3x3			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_OUT_CHANNEL*DDR_WEIGHT_1x1_IN_CHANNEL*1*1								port=DDR_weight1x1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_BIAS_NUM																			port=DDR_bias				offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=conv1_7x7_s2_out_channel*conv1_7x7_s2_out_height*conv1_7x7_s2_out_width				port=conv1_7x7_s2_1			offset=slave bundle=INPUT
+/////interface_insert/////
+#pragma HLS INTERFACE m_axi depth=(conv1_7x7_s2_out_channel)*conv1_7x7_s2_out_height*conv1_7x7_s2_out_width				port=conv1_7x7_s2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool1_3x3_s2_out_channel)*pool1_3x3_s2_out_height*pool1_3x3_s2_out_width				port=pool1_3x3_s2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool1_norm1_out_channel)*pool1_norm1_out_height*pool1_norm1_out_width				port=pool1_norm1_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(conv2_3x3_reduce_out_channel)*conv2_3x3_reduce_out_height*conv2_3x3_reduce_out_width				port=conv2_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(conv2_3x3_out_channel)*conv2_3x3_out_height*conv2_3x3_out_width				port=conv2_3x3_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(conv2_norm2_out_channel)*conv2_norm2_out_height*conv2_norm2_out_width				port=conv2_norm2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool2_3x3_s2_out_channel)*pool2_3x3_s2_out_height*pool2_3x3_s2_out_width				port=pool2_3x3_s2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3a_1x1_out_channel+inception_3a_3x3_out_channel+inception_3a_5x5_out_channel+inception_3a_pool_out_channel+inception_3a_pool_proj_out_channel)*inception_3a_1x1_out_height*inception_3a_1x1_out_width				port=inception_3a_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3a_3x3_reduce_out_channel)*inception_3a_3x3_reduce_out_height*inception_3a_3x3_reduce_out_width				port=inception_3a_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3a_5x5_reduce_out_channel)*inception_3a_5x5_reduce_out_height*inception_3a_5x5_reduce_out_width				port=inception_3a_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3b_1x1_out_channel+inception_3b_3x3_out_channel+inception_3b_5x5_out_channel+inception_3b_pool_out_channel+inception_3b_pool_proj_out_channel)*inception_3b_1x1_out_height*inception_3b_1x1_out_width				port=inception_3b_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3b_3x3_reduce_out_channel)*inception_3b_3x3_reduce_out_height*inception_3b_3x3_reduce_out_width				port=inception_3b_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_3b_5x5_reduce_out_channel)*inception_3b_5x5_reduce_out_height*inception_3b_5x5_reduce_out_width				port=inception_3b_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool3_3x3_s2_out_channel)*pool3_3x3_s2_out_height*pool3_3x3_s2_out_width				port=pool3_3x3_s2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4a_1x1_out_channel+inception_4a_3x3_out_channel+inception_4a_5x5_out_channel+inception_4a_pool_out_channel+inception_4a_pool_proj_out_channel)*inception_4a_1x1_out_height*inception_4a_1x1_out_width				port=inception_4a_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4a_3x3_reduce_out_channel)*inception_4a_3x3_reduce_out_height*inception_4a_3x3_reduce_out_width				port=inception_4a_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4a_5x5_reduce_out_channel)*inception_4a_5x5_reduce_out_height*inception_4a_5x5_reduce_out_width				port=inception_4a_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4b_1x1_out_channel+inception_4b_3x3_out_channel+inception_4b_5x5_out_channel+inception_4b_pool_out_channel+inception_4b_pool_proj_out_channel)*inception_4b_1x1_out_height*inception_4b_1x1_out_width				port=inception_4b_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4b_3x3_reduce_out_channel)*inception_4b_3x3_reduce_out_height*inception_4b_3x3_reduce_out_width				port=inception_4b_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4b_5x5_reduce_out_channel)*inception_4b_5x5_reduce_out_height*inception_4b_5x5_reduce_out_width				port=inception_4b_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4c_1x1_out_channel+inception_4c_3x3_out_channel+inception_4c_5x5_out_channel+inception_4c_pool_out_channel+inception_4c_pool_proj_out_channel)*inception_4c_1x1_out_height*inception_4c_1x1_out_width				port=inception_4c_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4c_3x3_reduce_out_channel)*inception_4c_3x3_reduce_out_height*inception_4c_3x3_reduce_out_width				port=inception_4c_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4c_5x5_reduce_out_channel)*inception_4c_5x5_reduce_out_height*inception_4c_5x5_reduce_out_width				port=inception_4c_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4d_1x1_out_channel+inception_4d_3x3_out_channel+inception_4d_5x5_out_channel+inception_4d_pool_out_channel+inception_4d_pool_proj_out_channel)*inception_4d_1x1_out_height*inception_4d_1x1_out_width				port=inception_4d_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4d_3x3_reduce_out_channel)*inception_4d_3x3_reduce_out_height*inception_4d_3x3_reduce_out_width				port=inception_4d_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4d_5x5_reduce_out_channel)*inception_4d_5x5_reduce_out_height*inception_4d_5x5_reduce_out_width				port=inception_4d_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4e_1x1_out_channel+inception_4e_3x3_out_channel+inception_4e_5x5_out_channel+inception_4e_pool_out_channel+inception_4e_pool_proj_out_channel)*inception_4e_1x1_out_height*inception_4e_1x1_out_width				port=inception_4e_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4e_3x3_reduce_out_channel)*inception_4e_3x3_reduce_out_height*inception_4e_3x3_reduce_out_width				port=inception_4e_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_4e_5x5_reduce_out_channel)*inception_4e_5x5_reduce_out_height*inception_4e_5x5_reduce_out_width				port=inception_4e_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool4_3x3_s2_out_channel)*pool4_3x3_s2_out_height*pool4_3x3_s2_out_width				port=pool4_3x3_s2_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5a_1x1_out_channel+inception_5a_3x3_out_channel+inception_5a_5x5_out_channel+inception_5a_pool_out_channel+inception_5a_pool_proj_out_channel)*inception_5a_1x1_out_height*inception_5a_1x1_out_width				port=inception_5a_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5a_3x3_reduce_out_channel)*inception_5a_3x3_reduce_out_height*inception_5a_3x3_reduce_out_width				port=inception_5a_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5a_5x5_reduce_out_channel)*inception_5a_5x5_reduce_out_height*inception_5a_5x5_reduce_out_width				port=inception_5a_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5b_1x1_out_channel+inception_5b_3x3_out_channel+inception_5b_5x5_out_channel+inception_5b_pool_out_channel+inception_5b_pool_proj_out_channel)*inception_5b_1x1_out_height*inception_5b_1x1_out_width				port=inception_5b_output_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5b_3x3_reduce_out_channel)*inception_5b_3x3_reduce_out_height*inception_5b_3x3_reduce_out_width				port=inception_5b_3x3_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(inception_5b_5x5_reduce_out_channel)*inception_5b_5x5_reduce_out_height*inception_5b_5x5_reduce_out_width				port=inception_5b_5x5_reduce_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=(pool5_7x7_s1_out_channel)*pool5_7x7_s1_out_height*pool5_7x7_s1_out_width				port=pool5_7x7_s1_1			offset=slave bundle=INPUT
 
 
 #pragma HLS INTERFACE m_axi depth=OU									port=outputs offset=slave bundle=OUTPUT

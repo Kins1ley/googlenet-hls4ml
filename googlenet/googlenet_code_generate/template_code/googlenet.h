@@ -15,28 +15,23 @@ void googlenet(
 	FIX_INT8 DDR_weight3x3[DDR_WEIGHT_3x3_OUT_CHANNEL][DDR_WEIGHT_3x3_IN_CHANNEL][3][3],
 	FIX_INT8 DDR_weight1x1[DDR_WEIGHT_1x1_OUT_CHANNEL][DDR_WEIGHT_1x1_IN_CHANNEL][1][1],
 	FIX_INT20 DDR_bias[DDR_BIAS_NUM],
-	FIX_INT20 conv1_7x7_s2_1[conv1_7x7_s2_out_channel][conv1_7x7_s2_out_height][conv1_7x7_s2_out_width],
-	FIX_INT20 pool1_3x3_s2_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
-	FIX_INT20 pool1_norm1_1[pool1_3x3_s2_out_channel][pool1_3x3_s2_out_height][pool1_3x3_s2_out_width],
-	FIX_INT20 pool3_3x3_s2[pool3_3x3_s2_out_channel][pool3_3x3_s2_out_height][pool3_3x3_s2_out_width],
+	/////DRAM_insert/////
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
 
 
-
-	FIX_INT20 pool4_3x3_s2[pool4_3x3_s2_out_channel][pool4_3x3_s2_out_height][pool4_3x3_s2_out_width],
 	/////////////////////////////// inception(5a) -> linear              ////////////////////////////(Qi)
 
 
 	FIX_INT20 out[OU]
 
 ) {
-#pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=inputs					offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=data_0					offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_OUT_CHANNEL*DDR_WEIGHT_7x7_IN_CHANNEL*7*7								port=DDR_weight7x7			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_OUT_CHANNEL*DDR_WEIGHT_5x5_IN_CHANNEL*5*5								port=DDR_weight5x5			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_OUT_CHANNEL*DDR_WEIGHT_3x3_IN_CHANNEL*3*3								port=DDR_weight3x3			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_OUT_CHANNEL*DDR_WEIGHT_1x1_IN_CHANNEL*1*1								port=DDR_weight1x1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_BIAS_NUM																			port=DDR_bias				offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=conv1_7x7_s2_out_channel*conv1_7x7_s2_out_height*conv1_7x7_s2_out_width				port=conv1_7x7_s2_1			offset=slave bundle=INPUT
+/////interface_insert/////
 
 
 #pragma HLS INTERFACE m_axi depth=OU									port=outputs offset=slave bundle=OUTPUT
