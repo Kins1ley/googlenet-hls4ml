@@ -1,6 +1,8 @@
 # googlenet-HLS4ML code generator
 用法
 > python generate_googlenet.py
+
+生成的代码在./out_code/
 ## generate_conv.py
 1. layer_config_dict的创建参照开头的几行。
 2. 把layer_config_dict作为参数传入generate_conv函数，函数就可以根据function_template文件夹里的模板生成对应的卷积代码。
@@ -14,7 +16,7 @@
 依据onnx文件填充卷积层，池化层和LRN层的模板，并写入googlenet.h，allocate_config.h和template_config.h。
 
 ## TODO
-1. 最后一个全连接层也当作卷积层处理
-2. 编写testbench
+1. 复用DRAM的feature
+2. 读取权重
 3. 为整个googlenet做csim
 
