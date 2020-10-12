@@ -250,6 +250,67 @@ const int {layer_name}_out_height = {layer_name}_in_height;\n\
 const int {layer_name}_out_width = {layer_name}_in_width;\n\
 const int {layer_name}_depth_radius = {depth_radius};\n"
 
+def read_value(file_name):
+    model = ModelProto()
+
+    with open(file_name, 'rb') as fid:
+        model.ParseFromString(fid.read())
+    passes = ['fuse_transpose_into_gemm', 'fuse_matmul_add_bias_into_gemm', 'eliminate_nop_transpose',
+              'fuse_consecutive_transposes']
+    model = shape_inference.infer_shapes(model)  # have to infer shapes before optimizing the model
+    model = optimizer.optimize(model, passes)
+    model = shape_inference.infer_shapes(model)  # have to infer shapes before optimizing the model
+    # print(model)
+    header_dict = {}
+    layer_names = []
+    for operation in model.graph.node:
+        # print(operation.op_type)
+        if operation.op_type == "Conv":
+            layer_name = operation.output[0]
+            layer_names.append(layer_name[:-2])
+
+    Weight_1x1 = []
+    Weight_3x3 = []
+    Weight_5x5 = []
+    Weight_7x7 = []
+    Bias = {}
+    _model = model.graph.initializer
+    print(layer_names)
+    for layer_name in layer_names:
+        # print(layer_name)
+        name = layer_name.replace("/", "_")
+        # print(name)
+        # print(layer_name)
+        weight_name = layer_name + "_w_0"
+        # print(weight_name)
+        if "7x7" in weight_name:
+            [weight_7x7] = [t for t in _model if t.name == weight_name]
+            Weight_7x7.append(numpy_helper.to_array(weight_7x7).tolist())
+        elif "5x5" in weight_name and "reduce" not in weight_name:
+            [weight_5x5] = [t for t in _model if t.name == weight_name]
+            Weight_5x5.append(numpy_helper.to_array(weight_5x5).tolist())
+        elif "3x3" in weight_name and "reduce" not in weight_name:
+            [weight_3x3] = [t for t in _model if t.name == weight_name]
+            Weight_3x3.append(numpy_helper.to_array(weight_3x3).tolist())
+        else:
+            [weight_1x1] = [t for t in _model if t.name == weight_name]
+            Weight_1x1.append(numpy_helper.to_array(weight_1x1).tolist())
+
+    Weight = [Weight_7x7, Weight_5x5, Weight_3x3, Weight_1x1]
+    file_names = ["weight_7x7.txt", "weight_5x5.txt", "weight_3x3.txt", "weight_1x1.txt"]
+    t = ''
+    for index in range(len(Weight)):
+        with open(file_names[index], 'w') as q:
+            for i in range(len(Weight[index])):
+                for j in range(len(Weight[index][i])):
+                    for k in range(len(Weight[index][i][j])):
+                        for l in range(len(Weight[index][i][j][k])):
+                            for m in range(len(Weight[index][i][j][k][l])):
+                                t = t + str(Weight[index][i][j][k][l][m]) + ' '
+                        print(t)
+                        q.write(t.strip(' '))
+                        t = ''
+                        
 def read_onnx(file_name):
 
     # Extract model architecture
