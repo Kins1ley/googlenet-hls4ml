@@ -10,10 +10,10 @@ void googlenet(
 	//required weight, bias
 	//save features that are too large to save in BRAM
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
-	FIX_INT8 DDR_weight_7x7[DDR_WEIGHT_7x7_OUT_CHANNEL][DDR_WEIGHT_7x7_IN_CHANNEL][7][7],
-	FIX_INT8 DDR_weight_5x5[DDR_WEIGHT_5x5_OUT_CHANNEL][DDR_WEIGHT_5x5_IN_CHANNEL][5][5],
-	FIX_INT8 DDR_weight_3x3[DDR_WEIGHT_3x3_OUT_CHANNEL][DDR_WEIGHT_3x3_IN_CHANNEL][3][3],
-	FIX_INT8 DDR_weight_1x1[DDR_WEIGHT_1x1_OUT_CHANNEL][DDR_WEIGHT_1x1_IN_CHANNEL][1][1],
+	FIX_INT8 DDR_weight_7x7[DDR_WEIGHT_7x7_CHANNEL][7][7],
+	FIX_INT8 DDR_weight_5x5[DDR_WEIGHT_5x5_CHANNEL][5][5],
+	FIX_INT8 DDR_weight_3x3[DDR_WEIGHT_3x3_CHANNEL][3][3],
+	FIX_INT8 DDR_weight_1x1[DDR_WEIGHT_1x1_CHANNEL][1][1],
 	FIX_INT20 DDR_bias[DDR_BIAS_NUM],
 	/////DRAM_insert/////
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
