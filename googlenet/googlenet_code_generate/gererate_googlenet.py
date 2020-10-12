@@ -34,17 +34,18 @@ def write_testbench(template_file_name,out_file_name,configs,headers):
             break
         print(text,file=out_file,end="")
         if insert_tag_DRAM in text:
+            continue# no need to add DRAM ports for features
             DRAM_param_dict= {}
             for config in configs:
                 if "conv_layer_name" in config.keys():
                     layer_name=config["conv_layer_name"]
-                    layer_output=config["conv_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if "pool_layer_name" in config.keys():
                     layer_name = config["pool_layer_name"]
-                    layer_output=config["pool_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if "lrn_layer_name" in config.keys():
                     layer_name = config["lrn_layer_name"]
-                    layer_output=config["lrn_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if layer_output not in DRAM_param_dict.keys():
                     DRAM_param_dict[layer_output]="static FIX_INT20 {layer_output}[{layer_name}_out_channel][{layer_name}_out_height][{layer_name}_out_width];".format(
                         layer_output=layer_output,layer_name=layer_name)
@@ -54,17 +55,18 @@ def write_testbench(template_file_name,out_file_name,configs,headers):
             for key in DRAM_param_dict.keys():
                 print(DRAM_param_dict[key],file=out_file)
         elif insert_tag_param in text:
+            continue# no need to add DRAM ports for features
             DRAM_interface_dict = {}
             for config in configs:
                 if "conv_layer_name" in config.keys():
                     layer_name = config["conv_layer_name"]
-                    layer_output = config["conv_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if "pool_layer_name" in config.keys():
                     layer_name = config["pool_layer_name"]
-                    layer_output = config["pool_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if "lrn_layer_name" in config.keys():
                     layer_name = config["lrn_layer_name"]
-                    layer_output = config["lrn_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if layer_output not in DRAM_interface_dict.keys():
                     DRAM_interface_dict[layer_output]="{layer_output}".format(
                         layer_output=layer_output, layer_name=layer_name)
@@ -84,17 +86,18 @@ def write_googlenet(template_file_name,out_file_name,configs,headers):
             break
         print(text,file=out_file,end="")
         if insert_tag_DRAM in text:
+            continue# no need to add DRAM ports for features
             DRAM_param_dict= {}
             for config in configs:
                 if "conv_layer_name" in config.keys():
                     layer_name=config["conv_layer_name"]
-                    layer_output=config["conv_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if "pool_layer_name" in config.keys():
                     layer_name = config["pool_layer_name"]
-                    layer_output=config["pool_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if "lrn_layer_name" in config.keys():
                     layer_name = config["lrn_layer_name"]
-                    layer_output=config["lrn_layer_output"]
+                    layer_output=config["layer_output_name"]
                 if layer_output not in DRAM_param_dict.keys():
                     DRAM_param_dict[layer_output]="FIX_INT20 {layer_output}[{layer_name}_out_channel][{layer_name}_out_height][{layer_name}_out_width],".format(
                         layer_output=layer_output,layer_name=layer_name)
@@ -107,17 +110,18 @@ def write_googlenet(template_file_name,out_file_name,configs,headers):
                 else:
                     print(DRAM_param_dict[key][:-1], file=out_file)
         elif insert_tag_interface in text:
+            continue# no need to add DRAM ports for features
             DRAM_interface_dict = {}
             for config in configs:
                 if "conv_layer_name" in config.keys():
                     layer_name = config["conv_layer_name"]
-                    layer_output = config["conv_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if "pool_layer_name" in config.keys():
                     layer_name = config["pool_layer_name"]
-                    layer_output = config["pool_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if "lrn_layer_name" in config.keys():
                     layer_name = config["lrn_layer_name"]
-                    layer_output = config["lrn_layer_output"]
+                    layer_output = config["layer_output_name"]
                 if layer_output not in DRAM_interface_dict.keys():
                     DRAM_interface_dict[layer_output]="#pragma HLS INTERFACE m_axi depth=({layer_name}_out_channel)*{layer_name}_out_height*{layer_name}_out_width				port={layer_output}			offset=slave bundle=INPUT".format(
                         layer_output=layer_output, layer_name=layer_name)

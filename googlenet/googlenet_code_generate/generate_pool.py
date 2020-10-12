@@ -8,10 +8,11 @@ allocate_config_mark="/////////////allocate_config/////////////"
 layer_config_dict={"left_bracket":"{","right_bracket":"}"}
 layer_config_dict["pool_layer_name"]="pool1_3x3_s2"
 layer_config_dict["pool_layer_type"]="MAXPOOL3x3_S2"
-layer_config_dict["pool_pe_name"]="pool3x3"
-layer_config_dict["pool_layer_input"]="conv1_7x7_s2_1"
-layer_config_dict["pool_layer_output"]="pool1_3x3_s2_1"
-
+layer_config_dict["pe_name"]="pool3x3"
+layer_config_dict["layer_input_name"]="conv1_7x7_s2_1"
+layer_config_dict["layer_output_name"]="pool1_3x3_s2_1"
+layer_config_dict["DDR_in_feature"]="DDR_feature_0"
+layer_config_dict["DDR_out_feature"]="DDR_feature_1"
 def generate_pool_template():
     """
     generate the template file
@@ -27,11 +28,13 @@ def generate_pool_template():
             text = text.replace("}","right_bracket}")
             text = text.replace("{left_bracket", "{left_bracket}")
             text = text.replace("right_bracket}", "{right_bracket}")
-            text = text.replace("pool1_3x3_s2_1", "{pool_layer_output}")
-            text = text.replace("conv1_7x7_s2_1", "{pool_layer_input}")
+            text = text.replace("pool1_3x3_s2_1_config", "{layer_output_name}_config")
+            text = text.replace("conv1_7x7_s2_1_config", "{layer_input_name}_config")
+            text = text.replace("pool1_3x3_s2_1", "{DDR_out_feature}")
+            text = text.replace("conv1_7x7_s2_1", "{DDR_in_feature}")
             text = text.replace("pool1_3x3_s2","{pool_layer_name}")
             text = text.replace("MAXPOOL3x3_S2","{pool_layer_type}")
-            text = text.replace("pool3x3", "{pool_pe_name}")
+            text = text.replace("pool3x3", "{pe_name}")
 
             print(text,file=tmp_file,end="")
             #print(text)
@@ -86,18 +89,22 @@ def generate_pool(layer_config_dict,template_name="./function_templates/pool_tem
                                       right_bracket=layer_config_dict["right_bracket"],
                                       pool_layer_name=layer_config_dict["pool_layer_name"],
                                       pool_layer_type=layer_config_dict["pool_layer_type"],
-                                      pool_pe_name=layer_config_dict["pool_pe_name"],
-                                      pool_layer_input=layer_config_dict["pool_layer_input"],
-                                      pool_layer_output=layer_config_dict["pool_layer_output"]
+                                      pe_name=layer_config_dict["pe_name"],
+                                      layer_input_name=layer_config_dict["layer_input_name"],
+                                      layer_output_name=layer_config_dict["layer_output_name"],
+                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
+                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
                                       ), end="",file=out_file)
                 else:
                     print(text.format(left_bracket=layer_config_dict["left_bracket"],
                                       right_bracket=layer_config_dict["right_bracket"],
                                       pool_layer_name=layer_config_dict["pool_layer_name"],
                                       pool_layer_type=layer_config_dict["pool_layer_type"],
-                                      pool_pe_name=layer_config_dict["pool_pe_name"],
-                                      pool_layer_input=layer_config_dict["pool_layer_input"],
-                                      pool_layer_output=layer_config_dict["pool_layer_output"]
+                                      pe_name=layer_config_dict["pe_name"],
+                                      layer_input_name=layer_config_dict["layer_input_name"],
+                                      layer_output_name=layer_config_dict["layer_output_name"],
+                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
+                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
                                       ), end="")
 if __name__ == "__main__":
     generate_pool_template()

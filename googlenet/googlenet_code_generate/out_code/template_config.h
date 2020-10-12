@@ -502,13 +502,6 @@ struct DDR_feature_pool1_3x3_s2_1_config : nnet::Feature_Memory {
 	static const unsigned height = pool1_3x3_s2_out_height;
 	static const unsigned width = pool1_3x3_s2_out_width;
 };
-///pool1_norm1
-struct DDR_feature_pool1_norm1_1_config : nnet::Feature_Memory {
-    typedef FIX_INT20 feature_type;
-    static const unsigned channel = pool1_norm1_out_channel;
-    static const unsigned height = pool1_norm1_out_height;
-    static const unsigned width = pool1_norm1_out_width;
-};
 ///conv2_3x3_reduce
 struct DDR_feature_conv2_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
@@ -522,13 +515,6 @@ struct DDR_feature_conv2_3x3_2_config : nnet::Feature_Memory {
 	static const unsigned channel = conv2_3x3_out_channel;
 	static const unsigned height = conv2_3x3_out_height;
 	static const unsigned width = conv2_3x3_out_width;
-};
-///conv2_norm2
-struct DDR_feature_conv2_norm2_1_config : nnet::Feature_Memory {
-    typedef FIX_INT20 feature_type;
-    static const unsigned channel = conv2_norm2_out_channel;
-    static const unsigned height = conv2_norm2_out_height;
-    static const unsigned width = conv2_norm2_out_width;
 };
 ///pool2_3x3_s2
 struct DDR_feature_pool2_3x3_s2_1_config : nnet::Feature_Memory {

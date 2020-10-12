@@ -73,17 +73,17 @@ def read_config(file_name):
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["conv_pe_name"]="conv_output_reuse{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["pe_name"]="conv_output_reuse{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["conv_layer_input"]="{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_input_name"]="{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["conv_layer_output"]="{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_output_name"]="{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
@@ -93,6 +93,8 @@ def read_config(file_name):
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
+            layer_config_dict["DDR_in_feature"] = "DDR_feature_0"
+            layer_config_dict["DDR_out_feature"] = "DDR_feature_1"
             all_layer_config.append(layer_config_dict)
         if operation.op_type== "MaxPool":
             layer_config_dict = layer_config_dict_base.copy()
@@ -106,21 +108,23 @@ def read_config(file_name):
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_pe_name"] = "pool{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["pe_name"] = "pool{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_layer_input"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_input_name"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_layer_output"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_output_name"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
+            layer_config_dict["DDR_in_feature"] = "DDR_feature_0"
+            layer_config_dict["DDR_out_feature"] = "DDR_feature_1"
             all_layer_config.append(layer_config_dict)
         if operation.op_type== "AveragePool":
             layer_config_dict = layer_config_dict_base.copy()
@@ -134,35 +138,39 @@ def read_config(file_name):
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_pe_name"] = "pool{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["pe_name"] = "pool{kernel_shape}x{kernel_shape}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_layer_input"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_input_name"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["pool_layer_output"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_output_name"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   kernel_shape=get_onnx_attribute(operation,"kernel_shape")[0],
                   stride=get_onnx_attribute(operation, "strides")[0],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
+            layer_config_dict["DDR_in_feature"] = "DDR_feature_0"
+            layer_config_dict["DDR_out_feature"] = "DDR_feature_1"
             all_layer_config.append(layer_config_dict)
         if operation.op_type== "LRN":
             layer_config_dict = layer_config_dict_base.copy()
-            layer_config_dict["lrn_layer_name"] = "{name}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["pe_name"] = "{name}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
             layer_config_dict["lrn_layer_type"] = "LRN"
             layer_config_dict["lrn_pe_name"] = "LRN"
-            layer_config_dict["lrn_layer_input"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_input_name"] = "{input}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
-            layer_config_dict["lrn_layer_output"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
+            layer_config_dict["layer_output_name"] = "{output}".format(name=sanitize_input_name(operation.output[0])[:-2],
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
+            layer_config_dict["DDR_in_feature"] = "DDR_feature_0"
+            layer_config_dict["DDR_out_feature"] = "DDR_feature_1"
             all_layer_config.append(layer_config_dict)
     for operation in model.graph.node:
         if operation.op_type == "Relu":
@@ -196,10 +204,12 @@ def read_config(file_name):
     layer_config_dict["conv_layer_type"]="CONV1x1_S1"
     layer_config_dict["global_weight_name"]="global_weight_1x1"
     layer_config_dict["global_weight_type"]="WEIGHT_GLOBAL_1x1"
-    layer_config_dict["conv_pe_name"]="conv_output_reuse1x1"
-    layer_config_dict["conv_layer_input"]="pool5_7x7_s1_1"
-    layer_config_dict["conv_layer_output"]="out"
+    layer_config_dict["pe_name"]="conv_output_reuse1x1"
+    layer_config_dict["layer_input_name"]="pool5_7x7_s1_1"
+    layer_config_dict["layer_output_name"]="out"
     layer_config_dict["DDR_weight_type"]="DDR_weight_1x1"
+    layer_config_dict["DDR_in_feature"] = "DDR_feature_0"
+    layer_config_dict["DDR_out_feature"] = "DDR_feature_1"
     all_layer_config.append(layer_config_dict)
     return all_layer_config
 

@@ -31,14 +31,14 @@ for (int outer_h_idx = 0; outer_h_idx < {pool_layer_name}_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {left_bracket}
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {left_bracket}
                     nnet::clear_buffer<global_feature_config>(global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_{pool_layer_input}_config, global_feature_config>({pool_layer_input}, global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_{layer_input_name}_config, global_feature_config>({DDR_in_feature}, global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 {right_bracket}
                 else {left_bracket}
                     nnet::clear_buffer<global_feature_config>(global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_{pool_layer_input}_config, global_feature_config>({pool_layer_input}, global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_{layer_input_name}_config, global_feature_config>({DDR_in_feature}, global_feature[{pool_layer_name}_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -146,7 +146,7 @@ for (int outer_h_idx = 0; outer_h_idx < {pool_layer_name}_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::{pool_pe_name}<pool2d_config_{pool_layer_type}>(local_feature_in_{pool_layer_type}[pe_idx], local_feature_out_{pool_layer_type}[pe_idx]);
+                            nnet::{pe_name}<pool2d_config_MAX3x3_S2>(local_feature_in_{pool_layer_type}[pe_idx], local_feature_out_{pool_layer_type}[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<{pool_layer_type}_local_feature_out_config, global_feature_config>(local_feature_out_{pool_layer_type}[pe_idx], global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -181,12 +181,12 @@ for (int outer_h_idx = 0; outer_h_idx < {pool_layer_name}_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {left_bracket}
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_{pool_layer_output}_config>(global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_idx], {pool_layer_output},
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_{layer_output_name}_config>(global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_idx], {DDR_out_feature},
                             {pool_layer_name}_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
                             DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_{pool_layer_output}_config>(global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_idx], {pool_layer_output},
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_{layer_output_name}_config>(global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_idx], {DDR_out_feature},
                             {pool_layer_name}_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
                             DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
@@ -200,7 +200,7 @@ for (int outer_h_idx = 0; outer_h_idx < {pool_layer_name}_outer_height; outer_h_
 
 /////////////template_config/////////////
 ///{pool_layer_name}
-struct DDR_feature_{pool_layer_output}_config : nnet::Feature_Memory {left_bracket}
+struct DDR_feature_{layer_output_name}_config : nnet::Feature_Memory {left_bracket}
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = {pool_layer_name}_out_channel;
 	static const unsigned height = {pool_layer_name}_out_height;

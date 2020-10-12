@@ -11,10 +11,11 @@ layer_config_dict["conv_layer_type"]="CONV7x7_S2"
 layer_config_dict["global_weight_name"]="global_weight_7x7"
 layer_config_dict["global_weight_type"]="WEIGHT_GLOBAL_7x7"
 layer_config_dict["DDR_weight_type"]="DDR_weight_7x7"
-layer_config_dict["conv_pe_name"]="conv_output_reuse7x7"
-layer_config_dict["conv_layer_input"]="image_in"
-layer_config_dict["conv_layer_output"]="conv1_7x7_s2_1"
-
+layer_config_dict["pe_name"]="conv_output_reuse7x7"
+layer_config_dict["layer_input_name"]="image_in"
+layer_config_dict["layer_output_name"]="conv1_7x7_s2_1"
+layer_config_dict["DDR_in_feature"]="DDR_feature_0"
+layer_config_dict["DDR_out_feature"]="DDR_feature_1"
 def generate_conv_template():
     """
     generate the template file
@@ -30,11 +31,13 @@ def generate_conv_template():
             text = text.replace("}","right_bracket}")
             text = text.replace("{left_bracket", "{left_bracket}")
             text = text.replace("right_bracket}", "{right_bracket}")
-            text = text.replace("conv1_7x7_s2_1", "{conv_layer_output}")
-            text = text.replace("image_in", "{conv_layer_input}")
+            text = text.replace("image_in_config", "{layer_input_name}_config")
+            text = text.replace("conv1_7x7_s2_1_config", "{layer_output_name}_config")
+            text = text.replace("image_in", "{DDR_in_feature}")
+            text = text.replace("conv1_7x7_s2_1", "{DDR_out_feature}")
             text = text.replace("conv1_7x7_s2","{conv_layer_name}")
             text = text.replace("CONV7x7_S2","{conv_layer_type}")
-            text = text.replace("conv_output_reuse7x7", "{conv_pe_name}")
+            text = text.replace("conv_output_reuse7x7", "{pe_name}")
             text = text.replace("global_weight_7x7", "{global_weight_name}")
             text = text.replace("WEIGHT_GLOBAL_7x7", "{global_weight_type}")
             text = text.replace("DDR_weight_7x7", "{DDR_weight_type}")
@@ -96,10 +99,12 @@ def generate_conv(layer_config_dict,template_name="./function_templates/conv_tem
                                       conv_layer_type=layer_config_dict["conv_layer_type"],
                                       global_weight_name=layer_config_dict["global_weight_name"],
                                       global_weight_type=layer_config_dict["global_weight_type"],
-                                      conv_pe_name=layer_config_dict["conv_pe_name"],
-                                      conv_layer_input=layer_config_dict["conv_layer_input"],
-                                      conv_layer_output=layer_config_dict["conv_layer_output"],
-                                      DDR_weight_type=layer_config_dict["DDR_weight_type"]
+                                      pe_name=layer_config_dict["pe_name"],
+                                      layer_input_name=layer_config_dict["layer_input_name"],
+                                      layer_output_name=layer_config_dict["layer_output_name"],
+                                      DDR_weight_type=layer_config_dict["DDR_weight_type"],
+                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
+                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
                                       ), end="",file=out_file)
                 else:
                     print(text.format(left_bracket=layer_config_dict["left_bracket"],
@@ -108,10 +113,12 @@ def generate_conv(layer_config_dict,template_name="./function_templates/conv_tem
                                       conv_layer_type=layer_config_dict["conv_layer_type"],
                                       global_weight_name=layer_config_dict["global_weight_name"],
                                       global_weight_type=layer_config_dict["global_weight_type"],
-                                      conv_pe_name=layer_config_dict["conv_pe_name"],
-                                      conv_layer_input=layer_config_dict["conv_layer_input"],
-                                      conv_layer_output=layer_config_dict["conv_layer_output"],
-                                      DDR_weight_type = layer_config_dict["DDR_weight_type"]
+                                      pe_name=layer_config_dict["pe_name"],
+                                      layer_input_name=layer_config_dict["layer_input_name"],
+                                      layer_output_name=layer_config_dict["layer_output_name"],
+                                      DDR_weight_type = layer_config_dict["DDR_weight_type"],
+                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
+                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
                                       ), end="")
 if __name__ == "__main__":
     generate_conv_template()

@@ -59,12 +59,12 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7) - 1)
 						nnet::copy_weights_DDR2BRAM<DDR_weight_7x7_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
-							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
-							DDR_weight_ic_start_idx, global_weight_ic_num);
+							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
+							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
 						nnet::copy_weights_DDR2BRAM<DDR_weight_7x7_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
-							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
-							DDR_weight_ic_start_idx, global_weight_ic_num);
+							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
+							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
 
 				//std::cout << "(block)processing feature \n start_idx " << DDR_block_in_feature_c_start_idx<<","<< DDR_block_in_feature_h_start_idx << "," << DDR_block_in_feature_w_start_idx<<std::endl;
@@ -180,7 +180,7 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 											//std::cout << "clearing buffer for bias" << std::endl;
 											nnet::clear_buffer<CONV7x7_S2_local_feature_out_config>(local_feature_out_CONV7x7_S2[pe_idx]);
 											nnet::set_bias<CONV7x7_S2_set_bias_config>(local_feature_out_CONV7x7_S2[pe_idx], DDR_bias + conv1_7x7_s2_bias_DDR_offset + (conv1_7x7_s2_allocate_bias_start_idx + pe_idx + o_idx * conv1_7x7_s2_inner_pe_parallel + outer_oc_idx * conv1_7x7_s2_block_out_channel));
-											std::cout << "";
+											//std::cout << "";
 										}
 										else {
 											//restore partial sum

@@ -16,7 +16,9 @@
 依据onnx文件填充卷积层，池化层和LRN层的模板，并写入googlenet.h，allocate_config.h和template_config.h。
 
 ## TODO
-1. 复用DRAM的feature
-2. 读取权重
-3. 为整个googlenet做csim
+1. 复用DRAM的feature (已完成)
+2. 读取权重 
+3. 合并onnx_info.py中的几个读onnx文件的函数
+4. 细节完善(lrn的其他参数，maxpooling的最小值设置等)
+5. 为整个googlenet做csim
 

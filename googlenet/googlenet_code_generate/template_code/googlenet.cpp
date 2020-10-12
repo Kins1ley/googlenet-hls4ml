@@ -6,7 +6,10 @@
 
 int main(int argc, char const *argv[]) {
 	
-	static FIX_INT20 data_0[IMAGE_CH][IMAGE_H][IMAGE_W];
+	static FIX_INT20 data_0[IMAGE_CH * IMAGE_H * IMAGE_W];
+	static FIX_INT20 DDR_feature_0[DDR_FEATURE_LENGTH];
+	static FIX_INT20 DDR_feature_1[DDR_FEATURE_LENGTH];
+	static FIX_INT20 DDR_feature_2[DDR_FEATURE_LENGTH];
 	//required weight; bias
 	//save features that are too large to save in BRAM
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
@@ -17,7 +20,7 @@ int main(int argc, char const *argv[]) {
 	static FIX_INT20 DDR_bias[DDR_BIAS_NUM];
 	/////DRAM_insert/////
 
-	googlenet(data_0, DDR_weight7x7, DDR_weight5x5, DDR_weight3x3, DDR_weight1x1, DDR_bias,
+	googlenet(data_0, DDR_feature_0, DDR_feature_1, DDR_feature_2, DDR_weight7x7, DDR_weight5x5, DDR_weight3x3, DDR_weight1x1, DDR_bias,
 	/////param_insert/////
 
 		);

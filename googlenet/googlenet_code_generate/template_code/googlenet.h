@@ -6,7 +6,10 @@
 #include "header.h"
 #include "allocate_config.h"
 void googlenet(
-	FIX_INT20 data_0[IMAGE_CH][IMAGE_H][IMAGE_W],
+	FIX_INT20 data_0[IMAGE_CH*IMAGE_H*IMAGE_W],
+	FIX_INT20 DDR_feature_0[DDR_FEATURE_LENGTH],
+	FIX_INT20 DDR_feature_1[DDR_FEATURE_LENGTH],
+	FIX_INT20 DDR_feature_2[DDR_FEATURE_LENGTH],
 	//required weight, bias
 	//save features that are too large to save in BRAM
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
@@ -25,15 +28,15 @@ void googlenet(
 
 ) {
 #pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=data_0					offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_0			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_2			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_OUT_CHANNEL*DDR_WEIGHT_7x7_IN_CHANNEL*7*7								port=DDR_weight7x7			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_OUT_CHANNEL*DDR_WEIGHT_5x5_IN_CHANNEL*5*5								port=DDR_weight5x5			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_OUT_CHANNEL*DDR_WEIGHT_3x3_IN_CHANNEL*3*3								port=DDR_weight3x3			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_OUT_CHANNEL*DDR_WEIGHT_1x1_IN_CHANNEL*1*1								port=DDR_weight1x1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_BIAS_NUM																			port=DDR_bias				offset=slave bundle=INPUT
 /////interface_insert/////
-
-
-#pragma HLS INTERFACE m_axi depth=OU									port=outputs offset=slave bundle=OUTPUT
 
 	//global BRAM
 	static FIX_INT8 global_weight_7x7[NUM_WEIGHT_GLOBAL_7x7][OUT_CHANNEL_WEIGHT_GLOBAL_7x7][IN_CHANNEL_WEIGHT_GLOBAL_7x7][7][7];
