@@ -64,13 +64,13 @@ const int pool1_norm1_allocate_global_in_feature_num = 1;//multi global BRAM is 
 const int pool1_norm1_allocate_global_out_feature_start_idx = 1;
 const int pool1_norm1_allocate_global_out_feature_num = 1;
 ///overlapped features between blocks
-const int pool1_norm1_block_overlap_channel = 2 * pool1_norm1_deepth_radius;
+const int pool1_norm1_block_overlap_channel = 2 * pool1_norm1_depth_radius;
 ///number of blocks(the dims of the outer loop)
-const int pool1_norm1_outer_in_channel = DIV_CEIL(pool1_norm1_in_channel, pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_deepth_radius));
+const int pool1_norm1_outer_in_channel = DIV_CEIL(pool1_norm1_in_channel, pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_depth_radius));
 const int pool1_norm1_outer_height = DIV_CEIL(pool1_norm1_in_height, HEIGHT_FEATURE_GLOBAL);
 const int pool1_norm1_outer_width = DIV_CEIL(pool1_norm1_in_width, WIDTH_FEATURE_GLOBAL);
 ///interval between blocks
-const int pool1_norm1_block_interval_channel = pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_deepth_radius);//the spacing between blocks
+const int pool1_norm1_block_interval_channel = pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_depth_radius);//the spacing between blocks
 const int pool1_norm1_block_interval_height = HEIGHT_FEATURE_GLOBAL;
 const int pool1_norm1_block_interval_width = WIDTH_FEATURE_GLOBAL;
 ///dim of blocks
@@ -142,13 +142,13 @@ const int conv2_norm2_allocate_global_in_feature_num = 1;//multi global BRAM is 
 const int conv2_norm2_allocate_global_out_feature_start_idx = 1;
 const int conv2_norm2_allocate_global_out_feature_num = 1;
 ///overlapped features between blocks
-const int conv2_norm2_block_overlap_channel = 2 * conv2_norm2_deepth_radius;
+const int conv2_norm2_block_overlap_channel = 2 * conv2_norm2_depth_radius;
 ///number of blocks(the dims of the outer loop)
-const int conv2_norm2_outer_in_channel = DIV_CEIL(conv2_norm2_in_channel, conv2_norm2_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * conv2_norm2_deepth_radius));
+const int conv2_norm2_outer_in_channel = DIV_CEIL(conv2_norm2_in_channel, conv2_norm2_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * conv2_norm2_depth_radius));
 const int conv2_norm2_outer_height = DIV_CEIL(conv2_norm2_in_height, HEIGHT_FEATURE_GLOBAL);
 const int conv2_norm2_outer_width = DIV_CEIL(conv2_norm2_in_width, WIDTH_FEATURE_GLOBAL);
 ///interval between blocks
-const int conv2_norm2_block_interval_channel = conv2_norm2_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * conv2_norm2_deepth_radius);//the spacing between blocks
+const int conv2_norm2_block_interval_channel = conv2_norm2_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * conv2_norm2_depth_radius);//the spacing between blocks
 const int conv2_norm2_block_interval_height = HEIGHT_FEATURE_GLOBAL;
 const int conv2_norm2_block_interval_width = WIDTH_FEATURE_GLOBAL;
 ///dim of blocks
@@ -1981,6 +1981,34 @@ const int pool5_7x7_s1_block_in_channel = pool5_7x7_s1_allocate_global_in_featur
 const int pool5_7x7_s1_inner_pe_parallel = NUM_PE_AVGPOOL7x7_S1;
 ///dim of kernels
 const int pool5_7x7_s1_block_out_channel = pool5_7x7_s1_allocate_global_out_feature_num * CHANNEL_FEATURE_GLOBAL;
+//loss3_classifier
+///configuration
+const int loss3_classifier_allocate_global_in_feature_start_idx = 0;
+const int loss3_classifier_allocate_global_in_feature_num = 2;
+const int loss3_classifier_allocate_global_weight_1x1_start_idx = 0;
+const int loss3_classifier_allocate_global_weight_1x1_num = 2;
+const int loss3_classifier_allocate_global_out_feature_start_idx = 2;
+const int loss3_classifier_allocate_global_out_feature_num = 2;
+const int loss3_classifier_allocate_bias_start_idx = 0;
+///overlapped features between blocks
+const int loss3_classifier_block_overlap_height = KERNEL_HEIGHT_CONV1x1_S1 - 1;
+const int loss3_classifier_block_overlap_width = KERNEL_WIDTH_CONV1x1_S1 - 1;
+///number of blocks(the dims of the outer loop)
+const int loss3_classifier_outer_in_channel = DIV_CEIL(loss3_classifier_in_channel, loss3_classifier_allocate_global_in_feature_num*CHANNEL_FEATURE_GLOBAL < IN_CHANNEL_WEIGHT_GLOBAL_1x1 ? loss3_classifier_allocate_global_in_feature_num * CHANNEL_FEATURE_GLOBAL : IN_CHANNEL_WEIGHT_GLOBAL_1x1);
+const int loss3_classifier_outer_height = DIV_CEIL(loss3_classifier_in_height, HEIGHT_FEATURE_GLOBAL- loss3_classifier_block_overlap_height);
+const int loss3_classifier_outer_width = DIV_CEIL(loss3_classifier_in_width , WIDTH_FEATURE_GLOBAL - loss3_classifier_block_overlap_width);
+///interval between blocks
+const int loss3_classifier_block_interval_height = DIV_CEIL(DIV_CEIL(loss3_classifier_in_height, loss3_classifier_outer_height), STRIDE_CONV1x1_S1)*STRIDE_CONV1x1_S1;//the spacing between blocks
+const int loss3_classifier_block_interval_width = DIV_CEIL(DIV_CEIL(loss3_classifier_in_width, loss3_classifier_outer_width), STRIDE_CONV1x1_S1)*STRIDE_CONV1x1_S1;
+///dim of blocks
+const int loss3_classifier_block_in_height = loss3_classifier_block_interval_height+ loss3_classifier_block_overlap_height;
+const int loss3_classifier_block_in_width = loss3_classifier_block_interval_height + loss3_classifier_block_overlap_height;
+const int loss3_classifier_block_in_channel = MIN(loss3_classifier_allocate_global_in_feature_num*CHANNEL_FEATURE_GLOBAL , IN_CHANNEL_WEIGHT_GLOBAL_1x1);
+///set parallism
+const int loss3_classifier_inner_pe_parallel = NUM_PE_CONV1x1_S1;
+///dim of kernels
+const int loss3_classifier_block_out_channel = MIN(loss3_classifier_allocate_global_out_feature_num*CHANNEL_FEATURE_GLOBAL , loss3_classifier_allocate_global_weight_1x1_num*OUT_CHANNEL_WEIGHT_GLOBAL_1x1);
+const int loss3_classifier_outer_out_channel = DIV_CEIL(loss3_classifier_kernel_num, loss3_classifier_block_out_channel);//outer loop
 
 
 #endif

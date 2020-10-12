@@ -141,6 +141,14 @@ const int STRIDE_AVGPOOL7x7_S1 = 1;
 const int IN_HEIGHT_AVGPOOL7x7_S1 = (OUT_HEIGHT_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_HEIGHT_AVGPOOL7x7_S1;
 const int IN_WIDTH_AVGPOOL7x7_S1 = (OUT_WIDTH_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_WIDTH_AVGPOOL7x7_S1;
 
+//LRN
+//avgpool7x7_s1
+const int NUM_PE_LRN = 2;
+const int N_CHAN_LRN = 4;
+const int OUT_HEIGHT_LRN = 1;
+const int OUT_WIDTH_LRN = 1;
+const int IN_HEIGHT_LRN = OUT_HEIGHT_LRN;
+const int IN_WIDTH_LRN = OUT_WIDTH_LRN;
 
 //config of layers
 /////header_insert/////

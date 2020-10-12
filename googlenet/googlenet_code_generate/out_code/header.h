@@ -141,6 +141,14 @@ const int STRIDE_AVGPOOL7x7_S1 = 1;
 const int IN_HEIGHT_AVGPOOL7x7_S1 = (OUT_HEIGHT_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_HEIGHT_AVGPOOL7x7_S1;
 const int IN_WIDTH_AVGPOOL7x7_S1 = (OUT_WIDTH_AVGPOOL7x7_S1 - 1)* STRIDE_AVGPOOL7x7_S1 + KERNEL_WIDTH_AVGPOOL7x7_S1;
 
+//LRN
+//avgpool7x7_s1
+const int NUM_PE_LRN = 2;
+const int N_CHAN_LRN = 4;
+const int OUT_HEIGHT_LRN = 1;
+const int OUT_WIDTH_LRN = 1;
+const int IN_HEIGHT_LRN = OUT_HEIGHT_LRN;
+const int IN_WIDTH_LRN = OUT_WIDTH_LRN;
 
 //config of layers
 /////header_insert/////
@@ -1582,6 +1590,27 @@ const int pool5_7x7_s1_out_height = 1;
 const int pool5_7x7_s1_out_width = 1;
 const int pool5_7x7_s1_stride = 1;
 const int pool5_7x7_s1_out_channel_DDR_offset = 0;
+
+///layer loss3_classifier
+const int loss3_classifier_in_channel = 1024;
+const int loss3_classifier_in_height = 1;
+const int loss3_classifier_in_width = 1;
+const int loss3_classifier_pad_top = 0;
+const int loss3_classifier_pad_bottom = 0;
+const int loss3_classifier_pad_left = 0;
+const int loss3_classifier_pad_right = 0;
+const int loss3_classifier_kernel_num = 1000;
+const int loss3_classifier_kernel_channel = loss3_classifier_in_channel;
+const int loss3_classifier_kernel_channel_DDR_offset = 0;
+const int loss3_classifier_kernel_height = 1;
+const int loss3_classifier_kernel_width = 1;
+const int loss3_classifier_bias_num = loss3_classifier_kernel_num;
+const int loss3_classifier_bias_DDR_offset = 0;
+const int loss3_classifier_out_channel = loss3_classifier_kernel_num;
+const int loss3_classifier_out_height = 1;
+const int loss3_classifier_out_width = 1;
+const int loss3_classifier_stride = 1;
+const int loss3_classifier_out_channel_DDR_offset = 0;
 
 /////////////////////////////// convolution -> inception(3b) max pool////////////////////////////
 

@@ -164,6 +164,20 @@ def read_config(file_name):
                   input=sanitize_input_name(operation.input[0]),
                   output=sanitize_input_name(operation.output[0]))
             all_layer_config.append(layer_config_dict)
+    for operation in model.graph.node:
+        if operation.op_type == "Relu":
+            #replace the output name of layers before relu
+            inputs=[sanitize_input_name(i) for i in operation.input]
+            outputs=[sanitize_input_name(i) for i in operation.output]
+            for i in range(len(all_layer_config)):
+                for key in all_layer_config[i].keys():
+                    if "layer_output" in key:
+                        #if all_layer_config[i][key] in inputs:
+                        for input_name in inputs:
+                            if all_layer_config[i][key][:-2] == input_name[:-2]:
+                                #print("(in relu)replacing {} with {}".format(all_layer_config[i][key],outputs[0]))
+                                all_layer_config[i][key]=outputs[0]
+    for operation in model.graph.node:
         if operation.op_type == "Concat":
             #replace the output name of concatenated layers
             inputs=[sanitize_input_name(i) for i in operation.input]
@@ -173,11 +187,22 @@ def read_config(file_name):
                     if "layer_output" in key:
                         #if all_layer_config[i][key] in inputs:
                         for input_name in inputs:
-                            if all_layer_config[i][key][:-2] in input_name:
-                                #print("replacing {} with {}".format(all_layer_config[i][key],outputs[0]))
+                            if all_layer_config[i][key][:-2] == input_name[:-2]:
+                                #print("(in concat)replacing {} with {}".format(all_layer_config[i][key],outputs[0]))
                                 all_layer_config[i][key]=outputs[0]
-
+    # process last layer
+    layer_config_dict = layer_config_dict_base.copy()
+    layer_config_dict["conv_layer_name"]="loss3_classifier"
+    layer_config_dict["conv_layer_type"]="CONV1x1_S1"
+    layer_config_dict["global_weight_name"]="global_weight_1x1"
+    layer_config_dict["global_weight_type"]="WEIGHT_GLOBAL_1x1"
+    layer_config_dict["conv_pe_name"]="conv_output_reuse1x1"
+    layer_config_dict["conv_layer_input"]="pool5_7x7_s1_1"
+    layer_config_dict["conv_layer_output"]="out"
+    layer_config_dict["DDR_weight_type"]="DDR_weight_1x1"
+    all_layer_config.append(layer_config_dict)
     return all_layer_config
+
 
 header_template_conv="///layer {layer_name}\n\
 const int {layer_name}_in_channel = {in_channel};\n\
@@ -348,8 +373,17 @@ def read_onnx(file_name):
 
         if operation.op_type == "Concat":
             continue
-
-
+    #process last layer
+    header_dict["loss3_classifier"]=header_template_conv.format(layer_name="loss3_classifier",in_channel=1024,
+                                                                in_height=1,in_width=1,
+                                                                pad_top=0,pad_bottom=0,
+                                                                pad_left=0,pad_right=0,
+                                                                kernel_num=1000,kernel_height=1,
+                                                                kernel_width=1,out_height=1,
+                                                                out_width=1,stride=1,
+                                                                kernel_channel_DDR_offset=0,
+                                                                bias_DDR_offset=0,
+                                                                out_channel_DDR_offset=0)
     return header_dict
 
 if __name__=="__main__":

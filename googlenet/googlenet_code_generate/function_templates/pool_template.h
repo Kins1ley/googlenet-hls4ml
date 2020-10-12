@@ -146,7 +146,7 @@ for (int outer_h_idx = 0; outer_h_idx < {pool_layer_name}_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::{pool_pe_name}<pool2d_config_MAX3x3_S2>(local_feature_in_{pool_layer_type}[pe_idx], local_feature_out_{pool_layer_type}[pe_idx]);
+                            nnet::{pool_pe_name}<pool2d_config_{pool_layer_type}>(local_feature_in_{pool_layer_type}[pe_idx], local_feature_out_{pool_layer_type}[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<{pool_layer_type}_local_feature_out_config, global_feature_config>(local_feature_out_{pool_layer_type}[pe_idx], global_feature[{pool_layer_name}_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],

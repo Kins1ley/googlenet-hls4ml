@@ -24,7 +24,7 @@
 
 
 //conv2d pe config
-struct conv2d_config_1x1_s1 :nnet::conv2d_config
+struct conv2d_config_CONV1x1_S1 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -45,9 +45,16 @@ struct conv2d_config_1x1_s1 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV1x1_S1;
 
 };
+struct CONV1x1_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV1x1_S1;
+	static const unsigned width = OUT_WIDTH_CONV1x1_S1;
+};
 
-struct conv2d_config_3x3_s1:nnet::conv2d_config
+struct conv2d_config_CONV3x3_S1:nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -68,8 +75,16 @@ struct conv2d_config_3x3_s1:nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV3x3_S1;
 
 };
+struct CONV3x3_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
-struct conv2d_config_5x5_s1 :nnet::conv2d_config
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV3x3_S1;
+	static const unsigned width = OUT_WIDTH_CONV3x3_S1;
+};
+
+struct conv2d_config_CONV5x5_S1 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -90,8 +105,16 @@ struct conv2d_config_5x5_s1 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV5x5_S1;
 
 };
+struct CONV5x5_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
-struct conv2d_config_7x7_s2 :nnet::conv2d_config
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV5x5_S1;
+	static const unsigned width = OUT_WIDTH_CONV5x5_S1;
+};
+
+struct conv2d_config_CONV7x7_S2 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -112,9 +135,16 @@ struct conv2d_config_7x7_s2 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV7x7_S2;
 
 };
+struct CONV7x7_S2_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV7x7_S2;
+	static const unsigned width = OUT_WIDTH_CONV7x7_S2;
+};
 //pooling pe config
-struct pool2d_config_max3x3_s1:nnet::pool2d_config
+struct pool2d_config_MAXPOOL3x3_S1:nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -134,7 +164,7 @@ struct pool2d_config_max3x3_s1:nnet::pool2d_config
 
 };
 
-struct pool2d_config_max3x3_s2:nnet::pool2d_config
+struct pool2d_config_MAXPOOL3x3_S2:nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -154,7 +184,7 @@ struct pool2d_config_max3x3_s2:nnet::pool2d_config
 
 };
 
-struct pool2d_config_avg7x7_s1 :nnet::pool2d_config
+struct pool2d_config_AVGPOOL7x7_S1 :nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -174,9 +204,19 @@ struct pool2d_config_avg7x7_s1 :nnet::pool2d_config
 
 };
 
+//LRN pe config
+struct LRN_config :nnet::lrn_config {
+
+	typedef FIX_INT20 in_type;
+	typedef FIX_INT20 out_type;
+
+	static const unsigned in_channel = N_CHAN_LRN;
+	static const unsigned in_height = IN_HEIGHT_LRN;
+	static const unsigned in_width = IN_WIDTH_LRN;
+};
 
 //relu function after conv PEs
-struct relu_conv2d_config_1x1_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV1x1_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -187,7 +227,7 @@ struct relu_conv2d_config_1x1_s1 :nnet::relu_config
 };
 
 
-struct relu_conv2d_config_3x3_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV3x3_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -198,7 +238,7 @@ struct relu_conv2d_config_3x3_s1 :nnet::relu_config
 
 };
 
-struct relu_conv2d_config_5x5_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV5x5_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -209,7 +249,7 @@ struct relu_conv2d_config_5x5_s1 :nnet::relu_config
 
 };
 
-struct relu_conv2d_config_7x7_s2 :nnet::relu_config
+struct relu_conv2d_config_CONV7x7_S2 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -220,28 +260,28 @@ struct relu_conv2d_config_7x7_s2 :nnet::relu_config
 
 };
 //DRAM weight config
-struct DDR_weight7x7_config : nnet::Weight_Memory {
+struct DDR_weight_7x7_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_7x7_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_7x7_IN_CHANNEL;
 	static const unsigned height = 7;
 	static const unsigned width = 7;
 };
-struct DDR_weight5x5_config : nnet::Weight_Memory {
+struct DDR_weight_5x5_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_5x5_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_5x5_IN_CHANNEL;
 	static const unsigned height = 5;
 	static const unsigned width = 5;
 };
-struct DDR_weight3x3_config : nnet::Weight_Memory {
+struct DDR_weight_3x3_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_3x3_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_3x3_IN_CHANNEL;
 	static const unsigned height = 3;
 	static const unsigned width = 3;
 };
-struct DDR_weight1x1_config : nnet::Weight_Memory {
+struct DDR_weight_1x1_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_1x1_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_1x1_IN_CHANNEL;
@@ -318,7 +358,7 @@ struct CONV7x7_S2_local_weight_config : nnet::Weight_Memory {
 struct CONV5x5_S1_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = IN_CHAN_CONV5x5_S1;
-	static const unsigned height = IN_HEIGHT_CONV5x7_S1;
+	static const unsigned height = IN_HEIGHT_CONV5x5_S1;
 	static const unsigned width = IN_WIDTH_CONV5x5_S1;
 };
 
@@ -341,7 +381,7 @@ struct CONV5x5_S1_local_weight_config : nnet::Weight_Memory {
 struct CONV3x3_S1_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = IN_CHAN_CONV3x3_S1;
-	static const unsigned height = IN_HEIGHT_CONV5x7_S1;
+	static const unsigned height = IN_HEIGHT_CONV3x3_S1;
 	static const unsigned width = IN_WIDTH_CONV3x3_S1;
 };
 

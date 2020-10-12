@@ -6,7 +6,7 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 	for (int outer_w_idx = 0; outer_w_idx < conv1_7x7_s2_outer_width; outer_w_idx++) {
 		for (int outer_oc_idx = 0; outer_oc_idx < conv1_7x7_s2_outer_out_channel; outer_oc_idx++) {
 			for (int outer_ic_idx = 0; outer_ic_idx < conv1_7x7_s2_outer_in_channel; outer_ic_idx++) {
-				std::cout << "outer loop" << outer_h_idx << outer_w_idx << outer_oc_idx << outer_ic_idx << std::endl;
+				//std::cout << "outer loop" << outer_h_idx << outer_w_idx << outer_oc_idx << outer_ic_idx << std::endl;
 
 				//calculate the index to copy features and weights.
 				//index and shape of input feature in DRAM
@@ -177,14 +177,14 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 									if (i_idx == 0) {
 										if (outer_ic_idx == 0) {
 											//set bias
-											std::cout << "clearing buffer for bias" << std::endl;
+											//std::cout << "clearing buffer for bias" << std::endl;
 											nnet::clear_buffer<CONV7x7_S2_local_feature_out_config>(local_feature_out_CONV7x7_S2[pe_idx]);
 											nnet::set_bias<CONV7x7_S2_set_bias_config>(local_feature_out_CONV7x7_S2[pe_idx], DDR_bias + conv1_7x7_s2_bias_DDR_offset + (conv1_7x7_s2_allocate_bias_start_idx + pe_idx + o_idx * conv1_7x7_s2_inner_pe_parallel + outer_oc_idx * conv1_7x7_s2_block_out_channel));
 											std::cout << "";
 										}
 										else {
 											//restore partial sum
-											std::cout << "clearing buffer for restoring partial sum" << std::endl;
+											//std::cout << "clearing buffer for restoring partial sum" << std::endl;
 											nnet::clear_buffer<CONV7x7_S2_local_feature_out_config>(local_feature_out_CONV7x7_S2[pe_idx]);
 											nnet::copy_features_g2l<global_feature_config, CONV7x7_S2_local_feature_out_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_out_CONV7x7_S2[pe_idx],
 												global_out_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_out_feature_c_start_idx, local_out_feature_c_num,
@@ -194,7 +194,7 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 									}
 									//copy input feature and weight from global BRAM to local BRAM
 									//copy input feature
-									std::cout << "clearing buffer for input padding" << std::endl;
+									//std::cout << "clearing buffer for input padding" << std::endl;
 									nnet::clear_buffer<CONV7x7_S2_local_feature_in_config>(local_feature_in_CONV7x7_S2[pe_idx]);
 									nnet::copy_features_g2l<global_feature_config, CONV7x7_S2_local_feature_in_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_in_CONV7x7_S2[pe_idx],
 										global_in_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,

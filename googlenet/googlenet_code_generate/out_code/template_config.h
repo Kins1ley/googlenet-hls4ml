@@ -24,7 +24,7 @@
 
 
 //conv2d pe config
-struct conv2d_config_1x1_s1 :nnet::conv2d_config
+struct conv2d_config_CONV1x1_S1 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -45,9 +45,16 @@ struct conv2d_config_1x1_s1 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV1x1_S1;
 
 };
+struct CONV1x1_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV1x1_S1;
+	static const unsigned width = OUT_WIDTH_CONV1x1_S1;
+};
 
-struct conv2d_config_3x3_s1:nnet::conv2d_config
+struct conv2d_config_CONV3x3_S1:nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -68,8 +75,16 @@ struct conv2d_config_3x3_s1:nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV3x3_S1;
 
 };
+struct CONV3x3_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
-struct conv2d_config_5x5_s1 :nnet::conv2d_config
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV3x3_S1;
+	static const unsigned width = OUT_WIDTH_CONV3x3_S1;
+};
+
+struct conv2d_config_CONV5x5_S1 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -90,8 +105,16 @@ struct conv2d_config_5x5_s1 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV5x5_S1;
 
 };
+struct CONV5x5_S1_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
-struct conv2d_config_7x7_s2 :nnet::conv2d_config
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV5x5_S1;
+	static const unsigned width = OUT_WIDTH_CONV5x5_S1;
+};
+
+struct conv2d_config_CONV7x7_S2 :nnet::conv2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT32 accum_t;
@@ -112,9 +135,16 @@ struct conv2d_config_7x7_s2 :nnet::conv2d_config
 	static const unsigned out_width = OUT_WIDTH_CONV7x7_S2;
 
 };
+struct CONV7x7_S2_set_bias_config : nnet::set_bias_config {
+	typedef FIX_INT20 bias_type;
+	typedef FIX_INT20 feature_type;
 
+	static const unsigned channel = 1;
+	static const unsigned height = OUT_HEIGHT_CONV7x7_S2;
+	static const unsigned width = OUT_WIDTH_CONV7x7_S2;
+};
 //pooling pe config
-struct pool2d_config_max3x3_s1:nnet::pool2d_config
+struct pool2d_config_MAXPOOL3x3_S1:nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -134,7 +164,7 @@ struct pool2d_config_max3x3_s1:nnet::pool2d_config
 
 };
 
-struct pool2d_config_max3x3_s2:nnet::pool2d_config
+struct pool2d_config_MAXPOOL3x3_S2:nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -154,7 +184,7 @@ struct pool2d_config_max3x3_s2:nnet::pool2d_config
 
 };
 
-struct pool2d_config_avg7x7_s1 :nnet::pool2d_config
+struct pool2d_config_AVGPOOL7x7_S1 :nnet::pool2d_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_t;
@@ -174,9 +204,19 @@ struct pool2d_config_avg7x7_s1 :nnet::pool2d_config
 
 };
 
+//LRN pe config
+struct LRN_config :nnet::lrn_config {
+
+	typedef FIX_INT20 in_type;
+	typedef FIX_INT20 out_type;
+
+	static const unsigned in_channel = N_CHAN_LRN;
+	static const unsigned in_height = IN_HEIGHT_LRN;
+	static const unsigned in_width = IN_WIDTH_LRN;
+};
 
 //relu function after conv PEs
-struct relu_conv2d_config_1x1_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV1x1_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -187,7 +227,7 @@ struct relu_conv2d_config_1x1_s1 :nnet::relu_config
 };
 
 
-struct relu_conv2d_config_3x3_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV3x3_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -198,7 +238,7 @@ struct relu_conv2d_config_3x3_s1 :nnet::relu_config
 
 };
 
-struct relu_conv2d_config_5x5_s1 :nnet::relu_config
+struct relu_conv2d_config_CONV5x5_S1 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -209,7 +249,7 @@ struct relu_conv2d_config_5x5_s1 :nnet::relu_config
 
 };
 
-struct relu_conv2d_config_7x7_s2 :nnet::relu_config
+struct relu_conv2d_config_CONV7x7_S2 :nnet::relu_config
 {
 	// Internal data type definitions
 	typedef FIX_INT20 feature_type;
@@ -220,28 +260,28 @@ struct relu_conv2d_config_7x7_s2 :nnet::relu_config
 
 };
 //DRAM weight config
-struct DDR_weight7x7_config : nnet::Weight_Memory {
+struct DDR_weight_7x7_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_7x7_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_7x7_IN_CHANNEL;
 	static const unsigned height = 7;
 	static const unsigned width = 7;
 };
-struct DDR_weight5x5_config : nnet::Weight_Memory {
+struct DDR_weight_5x5_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_5x5_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_5x5_IN_CHANNEL;
 	static const unsigned height = 5;
 	static const unsigned width = 5;
 };
-struct DDR_weight3x3_config : nnet::Weight_Memory {
+struct DDR_weight_3x3_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_3x3_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_3x3_IN_CHANNEL;
 	static const unsigned height = 3;
 	static const unsigned width = 3;
 };
-struct DDR_weight1x1_config : nnet::Weight_Memory {
+struct DDR_weight_1x1_config : nnet::Weight_Memory {
 	typedef FIX_INT20 weight_type;
 	static const unsigned out_channel = DDR_WEIGHT_1x1_OUT_CHANNEL;
 	static const unsigned in_channel = DDR_WEIGHT_1x1_IN_CHANNEL;
@@ -318,7 +358,7 @@ struct CONV7x7_S2_local_weight_config : nnet::Weight_Memory {
 struct CONV5x5_S1_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = IN_CHAN_CONV5x5_S1;
-	static const unsigned height = IN_HEIGHT_CONV5x7_S1;
+	static const unsigned height = IN_HEIGHT_CONV5x5_S1;
 	static const unsigned width = IN_WIDTH_CONV5x5_S1;
 };
 
@@ -341,7 +381,7 @@ struct CONV5x5_S1_local_weight_config : nnet::Weight_Memory {
 struct CONV3x3_S1_local_feature_in_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = IN_CHAN_CONV3x3_S1;
-	static const unsigned height = IN_HEIGHT_CONV5x7_S1;
+	static const unsigned height = IN_HEIGHT_CONV3x3_S1;
 	static const unsigned width = IN_WIDTH_CONV3x3_S1;
 };
 
@@ -449,7 +489,7 @@ struct DDR_feature_data_0_config : nnet::Feature_Memory {
 };
 /////template_config_insert/////
 ///conv1_7x7_s2
-struct DDR_feature_conv1_7x7_s2_1_config : nnet::Feature_Memory {
+struct DDR_feature_conv1_7x7_s2_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = conv1_7x7_s2_out_channel;
 	static const unsigned height = conv1_7x7_s2_out_height;
@@ -470,14 +510,14 @@ struct DDR_feature_pool1_norm1_1_config : nnet::Feature_Memory {
     static const unsigned width = pool1_norm1_out_width;
 };
 ///conv2_3x3_reduce
-struct DDR_feature_conv2_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_conv2_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = conv2_3x3_reduce_out_channel;
 	static const unsigned height = conv2_3x3_reduce_out_height;
 	static const unsigned width = conv2_3x3_reduce_out_width;
 };
 ///conv2_3x3
-struct DDR_feature_conv2_3x3_1_config : nnet::Feature_Memory {
+struct DDR_feature_conv2_3x3_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = conv2_3x3_out_channel;
 	static const unsigned height = conv2_3x3_out_height;
@@ -505,46 +545,25 @@ struct DDR_feature_inception_3a_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_3a_1x1_out_width;
 };
 ///inception_3a_3x3_reduce
-struct DDR_feature_inception_3a_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3a_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3a_3x3_reduce_out_channel;
 	static const unsigned height = inception_3a_3x3_reduce_out_height;
 	static const unsigned width = inception_3a_3x3_reduce_out_width;
 };
-///inception_3a_3x3
-struct DDR_feature_inception_3a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3a_3x3_out_channel;
-	static const unsigned height = inception_3a_3x3_out_height;
-	static const unsigned width = inception_3a_3x3_out_width;
-};
 ///inception_3a_5x5_reduce
-struct DDR_feature_inception_3a_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3a_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3a_5x5_reduce_out_channel;
 	static const unsigned height = inception_3a_5x5_reduce_out_height;
 	static const unsigned width = inception_3a_5x5_reduce_out_width;
 };
-///inception_3a_5x5
-struct DDR_feature_inception_3a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3a_5x5_out_channel;
-	static const unsigned height = inception_3a_5x5_out_height;
-	static const unsigned width = inception_3a_5x5_out_width;
-};
 ///inception_3a_pool
-struct DDR_feature_inception_3a_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3a_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3a_pool_out_channel;
 	static const unsigned height = inception_3a_pool_out_height;
 	static const unsigned width = inception_3a_pool_out_width;
-};
-///inception_3a_pool_proj
-struct DDR_feature_inception_3a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3a_pool_proj_out_channel;
-	static const unsigned height = inception_3a_pool_proj_out_height;
-	static const unsigned width = inception_3a_pool_proj_out_width;
 };
 ///inception_3b_1x1
 struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
@@ -554,46 +573,25 @@ struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_3b_1x1_out_width;
 };
 ///inception_3b_3x3_reduce
-struct DDR_feature_inception_3b_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3b_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3b_3x3_reduce_out_channel;
 	static const unsigned height = inception_3b_3x3_reduce_out_height;
 	static const unsigned width = inception_3b_3x3_reduce_out_width;
 };
-///inception_3b_3x3
-struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3b_3x3_out_channel;
-	static const unsigned height = inception_3b_3x3_out_height;
-	static const unsigned width = inception_3b_3x3_out_width;
-};
 ///inception_3b_5x5_reduce
-struct DDR_feature_inception_3b_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3b_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3b_5x5_reduce_out_channel;
 	static const unsigned height = inception_3b_5x5_reduce_out_height;
 	static const unsigned width = inception_3b_5x5_reduce_out_width;
 };
-///inception_3b_5x5
-struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3b_5x5_out_channel;
-	static const unsigned height = inception_3b_5x5_out_height;
-	static const unsigned width = inception_3b_5x5_out_width;
-};
 ///inception_3b_pool
-struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_3b_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_3b_pool_out_channel;
 	static const unsigned height = inception_3b_pool_out_height;
 	static const unsigned width = inception_3b_pool_out_width;
-};
-///inception_3b_pool_proj
-struct DDR_feature_inception_3b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_3b_pool_proj_out_channel;
-	static const unsigned height = inception_3b_pool_proj_out_height;
-	static const unsigned width = inception_3b_pool_proj_out_width;
 };
 ///pool3_3x3_s2
 struct DDR_feature_pool3_3x3_s2_1_config : nnet::Feature_Memory {
@@ -610,46 +608,25 @@ struct DDR_feature_inception_4a_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_4a_1x1_out_width;
 };
 ///inception_4a_3x3_reduce
-struct DDR_feature_inception_4a_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4a_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4a_3x3_reduce_out_channel;
 	static const unsigned height = inception_4a_3x3_reduce_out_height;
 	static const unsigned width = inception_4a_3x3_reduce_out_width;
 };
-///inception_4a_3x3
-struct DDR_feature_inception_4a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4a_3x3_out_channel;
-	static const unsigned height = inception_4a_3x3_out_height;
-	static const unsigned width = inception_4a_3x3_out_width;
-};
 ///inception_4a_5x5_reduce
-struct DDR_feature_inception_4a_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4a_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4a_5x5_reduce_out_channel;
 	static const unsigned height = inception_4a_5x5_reduce_out_height;
 	static const unsigned width = inception_4a_5x5_reduce_out_width;
 };
-///inception_4a_5x5
-struct DDR_feature_inception_4a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4a_5x5_out_channel;
-	static const unsigned height = inception_4a_5x5_out_height;
-	static const unsigned width = inception_4a_5x5_out_width;
-};
 ///inception_4a_pool
-struct DDR_feature_inception_4a_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4a_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4a_pool_out_channel;
 	static const unsigned height = inception_4a_pool_out_height;
 	static const unsigned width = inception_4a_pool_out_width;
-};
-///inception_4a_pool_proj
-struct DDR_feature_inception_4a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4a_pool_proj_out_channel;
-	static const unsigned height = inception_4a_pool_proj_out_height;
-	static const unsigned width = inception_4a_pool_proj_out_width;
 };
 ///inception_4b_1x1
 struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
@@ -659,46 +636,25 @@ struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_4b_1x1_out_width;
 };
 ///inception_4b_3x3_reduce
-struct DDR_feature_inception_4b_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4b_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4b_3x3_reduce_out_channel;
 	static const unsigned height = inception_4b_3x3_reduce_out_height;
 	static const unsigned width = inception_4b_3x3_reduce_out_width;
 };
-///inception_4b_3x3
-struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4b_3x3_out_channel;
-	static const unsigned height = inception_4b_3x3_out_height;
-	static const unsigned width = inception_4b_3x3_out_width;
-};
 ///inception_4b_5x5_reduce
-struct DDR_feature_inception_4b_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4b_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4b_5x5_reduce_out_channel;
 	static const unsigned height = inception_4b_5x5_reduce_out_height;
 	static const unsigned width = inception_4b_5x5_reduce_out_width;
 };
-///inception_4b_5x5
-struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4b_5x5_out_channel;
-	static const unsigned height = inception_4b_5x5_out_height;
-	static const unsigned width = inception_4b_5x5_out_width;
-};
 ///inception_4b_pool
-struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4b_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4b_pool_out_channel;
 	static const unsigned height = inception_4b_pool_out_height;
 	static const unsigned width = inception_4b_pool_out_width;
-};
-///inception_4b_pool_proj
-struct DDR_feature_inception_4b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4b_pool_proj_out_channel;
-	static const unsigned height = inception_4b_pool_proj_out_height;
-	static const unsigned width = inception_4b_pool_proj_out_width;
 };
 ///inception_4c_1x1
 struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
@@ -708,46 +664,25 @@ struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_4c_1x1_out_width;
 };
 ///inception_4c_3x3_reduce
-struct DDR_feature_inception_4c_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4c_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4c_3x3_reduce_out_channel;
 	static const unsigned height = inception_4c_3x3_reduce_out_height;
 	static const unsigned width = inception_4c_3x3_reduce_out_width;
 };
-///inception_4c_3x3
-struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4c_3x3_out_channel;
-	static const unsigned height = inception_4c_3x3_out_height;
-	static const unsigned width = inception_4c_3x3_out_width;
-};
 ///inception_4c_5x5_reduce
-struct DDR_feature_inception_4c_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4c_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4c_5x5_reduce_out_channel;
 	static const unsigned height = inception_4c_5x5_reduce_out_height;
 	static const unsigned width = inception_4c_5x5_reduce_out_width;
 };
-///inception_4c_5x5
-struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4c_5x5_out_channel;
-	static const unsigned height = inception_4c_5x5_out_height;
-	static const unsigned width = inception_4c_5x5_out_width;
-};
 ///inception_4c_pool
-struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4c_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4c_pool_out_channel;
 	static const unsigned height = inception_4c_pool_out_height;
 	static const unsigned width = inception_4c_pool_out_width;
-};
-///inception_4c_pool_proj
-struct DDR_feature_inception_4c_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4c_pool_proj_out_channel;
-	static const unsigned height = inception_4c_pool_proj_out_height;
-	static const unsigned width = inception_4c_pool_proj_out_width;
 };
 ///inception_4d_1x1
 struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
@@ -757,46 +692,25 @@ struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_4d_1x1_out_width;
 };
 ///inception_4d_3x3_reduce
-struct DDR_feature_inception_4d_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4d_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4d_3x3_reduce_out_channel;
 	static const unsigned height = inception_4d_3x3_reduce_out_height;
 	static const unsigned width = inception_4d_3x3_reduce_out_width;
 };
-///inception_4d_3x3
-struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4d_3x3_out_channel;
-	static const unsigned height = inception_4d_3x3_out_height;
-	static const unsigned width = inception_4d_3x3_out_width;
-};
 ///inception_4d_5x5_reduce
-struct DDR_feature_inception_4d_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4d_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4d_5x5_reduce_out_channel;
 	static const unsigned height = inception_4d_5x5_reduce_out_height;
 	static const unsigned width = inception_4d_5x5_reduce_out_width;
 };
-///inception_4d_5x5
-struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4d_5x5_out_channel;
-	static const unsigned height = inception_4d_5x5_out_height;
-	static const unsigned width = inception_4d_5x5_out_width;
-};
 ///inception_4d_pool
-struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4d_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4d_pool_out_channel;
 	static const unsigned height = inception_4d_pool_out_height;
 	static const unsigned width = inception_4d_pool_out_width;
-};
-///inception_4d_pool_proj
-struct DDR_feature_inception_4d_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4d_pool_proj_out_channel;
-	static const unsigned height = inception_4d_pool_proj_out_height;
-	static const unsigned width = inception_4d_pool_proj_out_width;
 };
 ///inception_4e_1x1
 struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
@@ -806,46 +720,25 @@ struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_4e_1x1_out_width;
 };
 ///inception_4e_3x3_reduce
-struct DDR_feature_inception_4e_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4e_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4e_3x3_reduce_out_channel;
 	static const unsigned height = inception_4e_3x3_reduce_out_height;
 	static const unsigned width = inception_4e_3x3_reduce_out_width;
 };
-///inception_4e_3x3
-struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4e_3x3_out_channel;
-	static const unsigned height = inception_4e_3x3_out_height;
-	static const unsigned width = inception_4e_3x3_out_width;
-};
 ///inception_4e_5x5_reduce
-struct DDR_feature_inception_4e_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4e_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4e_5x5_reduce_out_channel;
 	static const unsigned height = inception_4e_5x5_reduce_out_height;
 	static const unsigned width = inception_4e_5x5_reduce_out_width;
 };
-///inception_4e_5x5
-struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4e_5x5_out_channel;
-	static const unsigned height = inception_4e_5x5_out_height;
-	static const unsigned width = inception_4e_5x5_out_width;
-};
 ///inception_4e_pool
-struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_4e_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_4e_pool_out_channel;
 	static const unsigned height = inception_4e_pool_out_height;
 	static const unsigned width = inception_4e_pool_out_width;
-};
-///inception_4e_pool_proj
-struct DDR_feature_inception_4e_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_4e_pool_proj_out_channel;
-	static const unsigned height = inception_4e_pool_proj_out_height;
-	static const unsigned width = inception_4e_pool_proj_out_width;
 };
 ///pool4_3x3_s2
 struct DDR_feature_pool4_3x3_s2_1_config : nnet::Feature_Memory {
@@ -862,46 +755,25 @@ struct DDR_feature_inception_5a_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_5a_1x1_out_width;
 };
 ///inception_5a_3x3_reduce
-struct DDR_feature_inception_5a_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5a_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5a_3x3_reduce_out_channel;
 	static const unsigned height = inception_5a_3x3_reduce_out_height;
 	static const unsigned width = inception_5a_3x3_reduce_out_width;
 };
-///inception_5a_3x3
-struct DDR_feature_inception_5a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5a_3x3_out_channel;
-	static const unsigned height = inception_5a_3x3_out_height;
-	static const unsigned width = inception_5a_3x3_out_width;
-};
 ///inception_5a_5x5_reduce
-struct DDR_feature_inception_5a_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5a_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5a_5x5_reduce_out_channel;
 	static const unsigned height = inception_5a_5x5_reduce_out_height;
 	static const unsigned width = inception_5a_5x5_reduce_out_width;
 };
-///inception_5a_5x5
-struct DDR_feature_inception_5a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5a_5x5_out_channel;
-	static const unsigned height = inception_5a_5x5_out_height;
-	static const unsigned width = inception_5a_5x5_out_width;
-};
 ///inception_5a_pool
-struct DDR_feature_inception_5a_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5a_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5a_pool_out_channel;
 	static const unsigned height = inception_5a_pool_out_height;
 	static const unsigned width = inception_5a_pool_out_width;
-};
-///inception_5a_pool_proj
-struct DDR_feature_inception_5a_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5a_pool_proj_out_channel;
-	static const unsigned height = inception_5a_pool_proj_out_height;
-	static const unsigned width = inception_5a_pool_proj_out_width;
 };
 ///inception_5b_1x1
 struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
@@ -911,46 +783,25 @@ struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
 	static const unsigned width = inception_5b_1x1_out_width;
 };
 ///inception_5b_3x3_reduce
-struct DDR_feature_inception_5b_3x3_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5b_3x3_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5b_3x3_reduce_out_channel;
 	static const unsigned height = inception_5b_3x3_reduce_out_height;
 	static const unsigned width = inception_5b_3x3_reduce_out_width;
 };
-///inception_5b_3x3
-struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5b_3x3_out_channel;
-	static const unsigned height = inception_5b_3x3_out_height;
-	static const unsigned width = inception_5b_3x3_out_width;
-};
 ///inception_5b_5x5_reduce
-struct DDR_feature_inception_5b_5x5_reduce_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5b_5x5_reduce_2_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5b_5x5_reduce_out_channel;
 	static const unsigned height = inception_5b_5x5_reduce_out_height;
 	static const unsigned width = inception_5b_5x5_reduce_out_width;
 };
-///inception_5b_5x5
-struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5b_5x5_out_channel;
-	static const unsigned height = inception_5b_5x5_out_height;
-	static const unsigned width = inception_5b_5x5_out_width;
-};
 ///inception_5b_pool
-struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
+struct DDR_feature_inception_5b_pool_1_config : nnet::Feature_Memory {
 	typedef FIX_INT20 feature_type;
 	static const unsigned channel = inception_5b_pool_out_channel;
 	static const unsigned height = inception_5b_pool_out_height;
 	static const unsigned width = inception_5b_pool_out_width;
-};
-///inception_5b_pool_proj
-struct DDR_feature_inception_5b_output_1_config : nnet::Feature_Memory {
-	typedef FIX_INT20 feature_type;
-	static const unsigned channel = inception_5b_pool_proj_out_channel;
-	static const unsigned height = inception_5b_pool_proj_out_height;
-	static const unsigned width = inception_5b_pool_proj_out_width;
 };
 ///pool5_7x7_s1
 struct DDR_feature_pool5_7x7_s1_1_config : nnet::Feature_Memory {
@@ -958,6 +809,13 @@ struct DDR_feature_pool5_7x7_s1_1_config : nnet::Feature_Memory {
 	static const unsigned channel = pool5_7x7_s1_out_channel;
 	static const unsigned height = pool5_7x7_s1_out_height;
 	static const unsigned width = pool5_7x7_s1_out_width;
+};
+///loss3_classifier
+struct DDR_feature_out_config : nnet::Feature_Memory {
+	typedef FIX_INT20 feature_type;
+	static const unsigned channel = loss3_classifier_out_channel;
+	static const unsigned height = loss3_classifier_out_height;
+	static const unsigned width = loss3_classifier_out_width;
 };
 /////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
 
