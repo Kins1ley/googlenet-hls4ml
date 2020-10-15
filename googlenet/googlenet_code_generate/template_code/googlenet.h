@@ -31,10 +31,10 @@ void googlenet(
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_0			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_2			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_OUT_CHANNEL*DDR_WEIGHT_7x7_IN_CHANNEL*7*7								port=DDR_weight7x7			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_OUT_CHANNEL*DDR_WEIGHT_5x5_IN_CHANNEL*5*5								port=DDR_weight5x5			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_OUT_CHANNEL*DDR_WEIGHT_3x3_IN_CHANNEL*3*3								port=DDR_weight3x3			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_OUT_CHANNEL*DDR_WEIGHT_1x1_IN_CHANNEL*1*1								port=DDR_weight1x1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_CHANNEL*7*7															port=DDR_weight7x7			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_CHANNEL*5*5															port=DDR_weight5x5			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_CHANNEL*3*3															port=DDR_weight3x3			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_CHANNEL*1*1															port=DDR_weight1x1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_BIAS_NUM																			port=DDR_bias				offset=slave bundle=INPUT
 /////interface_insert/////
 

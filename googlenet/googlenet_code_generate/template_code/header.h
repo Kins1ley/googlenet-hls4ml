@@ -19,6 +19,11 @@ const int IMAGE_W = 224;// image width
 const int OU = 1000;//number of final output
 
 const int DDR_FEATURE_LENGTH = 1024 * 32*32;
+const int DDR_WEIGHT_7x7_CHANNEL = 1024 * 32 * 32;
+const int DDR_WEIGHT_5x5_CHANNEL = 1024 * 32 * 32;
+const int DDR_WEIGHT_3x3_CHANNEL = 1024 * 32 * 32;
+const int DDR_WEIGHT_1x1_CHANNEL = 1024 * 32 * 32;
+const int DDR_BIAS_NUM = 1024 * 32 * 32;
 ///config of global BRAM
 const int NUM_WEIGHT_GLOBAL_7x7 = 8 ; //number of global bram of weights
 const int OUT_CHANNEL_WEIGHT_GLOBAL_7x7 = 2;//size of global bram of weights
