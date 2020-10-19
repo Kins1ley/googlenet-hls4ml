@@ -146,7 +146,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S2[pe_idx], global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -182,14 +182,14 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], pool1_3x3_s2_1,
-                            pool1_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool1_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], pool1_3x3_s2_1,
-                            pool1_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool1_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 

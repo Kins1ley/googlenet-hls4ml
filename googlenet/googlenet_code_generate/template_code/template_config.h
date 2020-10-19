@@ -259,36 +259,6 @@ struct relu_conv2d_config_CONV7x7_S2 :nnet::relu_config
 	static const unsigned in_channel = 1;
 
 };
-//DRAM weight config
-struct DDR_weight_7x7_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = DDR_WEIGHT_7x7_OUT_CHANNEL;
-	static const unsigned in_channel = DDR_WEIGHT_7x7_IN_CHANNEL;
-	static const unsigned height = 7;
-	static const unsigned width = 7;
-};
-struct DDR_weight_5x5_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = DDR_WEIGHT_5x5_OUT_CHANNEL;
-	static const unsigned in_channel = DDR_WEIGHT_5x5_IN_CHANNEL;
-	static const unsigned height = 5;
-	static const unsigned width = 5;
-};
-struct DDR_weight_3x3_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = DDR_WEIGHT_3x3_OUT_CHANNEL;
-	static const unsigned in_channel = DDR_WEIGHT_3x3_IN_CHANNEL;
-	static const unsigned height = 3;
-	static const unsigned width = 3;
-};
-struct DDR_weight_1x1_config : nnet::Weight_Memory {
-	typedef FIX_INT20 weight_type;
-	static const unsigned out_channel = DDR_WEIGHT_1x1_OUT_CHANNEL;
-	static const unsigned in_channel = DDR_WEIGHT_1x1_IN_CHANNEL;
-	static const unsigned height = 1;
-	static const unsigned width = 1;
-};
-
 
 //global BRAM config
 struct global_feature_config : nnet::Feature_Memory {

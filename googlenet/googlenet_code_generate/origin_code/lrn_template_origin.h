@@ -48,20 +48,20 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
             //dims of inner loop
             int inner_height = DIV_CEIL(global_block_in_feature_h_num, OUT_HEIGHT_LRN);
             int inner_width = DIV_CEIL(global_block_in_feature_w_num, OUT_WIDTH_LRN);
-            int padding_channel_left = (outer_ic_idx == 0) ? pool1_norm1_deepth_radius : 0;
-            int padding_channel_right = (outer_ic_idx == (pool1_norm1_outer_in_channel - 1)) ? pool1_norm1_deepth_radius : 0;
-            int inner_channel = DIV_CEIL(global_block_in_feature_c_num - 2 * pool1_norm1_deepth_radius + padding_channel_left + padding_channel_right, pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius));
+            int padding_channel_left = (outer_ic_idx == 0) ? pool1_norm1_depth_radius : 0;
+            int padding_channel_right = (outer_ic_idx == (pool1_norm1_outer_in_channel - 1)) ? pool1_norm1_depth_radius : 0;
+            int inner_channel = DIV_CEIL(global_block_in_feature_c_num - 2 * pool1_norm1_depth_radius + padding_channel_left + padding_channel_right, pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius));
             //do inner loop
             for (int h_idx = 0; h_idx < inner_height; h_idx++) {
                 for (int w_idx = 0; w_idx < inner_width; w_idx++) {
                     for (int c_idx = 0; c_idx < inner_channel; c_idx++) {
                         int inner_pe_parallel = pool1_norm1_inner_pe_parallel;
-                        if (c_idx == inner_channel - 1) inner_pe_parallel = DIV_CEIL(global_block_in_feature_c_num - c_idx * pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius), (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius));
+                        //if (c_idx == inner_channel - 1) inner_pe_parallel = DIV_CEIL(global_block_in_feature_c_num - c_idx * pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius), (N_CHAN_LRN - 2 * pool1_norm1_depth_radius));
 #pragma HLS pipeline
                         for (int pe_idx = 0; pe_idx < inner_pe_parallel; pe_idx++) {
 #pragma HLS unroll
                             //index of input feature in global BRAM
-                            int global_in_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius) - padding_channel_left;
+                            int global_in_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius) - padding_channel_left;
                             int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN; //
                             int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;//
 
@@ -74,7 +74,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
                             int local_in_feature_w_num = IN_WIDTH_LRN;
 
                             //index of output feature in global BRAM
-                            int global_out_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius);
+                            int global_out_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius);
                             int global_out_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN;
                             int global_out_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;
 
@@ -82,7 +82,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
                             int local_out_feature_c_start_idx = 0;
                             int local_out_feature_h_start_idx = 0;
                             int local_out_feature_w_start_idx = 0;
-                            int local_out_feature_c_num = N_CHAN_LRN - 2 * pool1_norm1_deepth_radius;
+                            int local_out_feature_c_num = N_CHAN_LRN - 2 * pool1_norm1_depth_radius;
                             int local_out_feature_h_num = OUT_HEIGHT_LRN;
                             int local_out_feature_w_num = OUT_WIDTH_LRN;
 
@@ -90,17 +90,19 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
                             if (h_idx == inner_height - 1) {
                                 //handle the last iteration of the loop and padding
                                 local_in_feature_h_num = global_block_in_feature_h_num - h_idx * OUT_HEIGHT_LRN;
+                                local_out_feature_h_num = local_in_feature_h_num;
                             }
 
                             if (w_idx == inner_width - 1) {
                                 //handle the last iteration of the loop and padding
                                 local_in_feature_w_num = global_block_in_feature_w_num - w_idx * OUT_WIDTH_LRN;
+                                local_out_feature_w_num = local_in_feature_w_num;
                             }
 
-                            if ((c_idx == inner_channel - 1) && (pe_idx == inner_pe_parallel - 1)) {
+                            if ((c_idx == inner_channel - 1) && (pe_idx == (inner_pe_parallel - 1))) {
                                 //handle the last iteration of the loop
-                                local_in_feature_c_num = global_block_in_feature_c_num + padding_channel_left - (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_deepth_radius);
-                                local_out_feature_c_num = local_in_feature_c_num + padding_channel_right - 2 * pool1_norm1_deepth_radius;
+                                local_in_feature_c_num = global_block_in_feature_c_num + padding_channel_right + padding_channel_left - (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius);
+                                local_out_feature_c_num = local_in_feature_c_num + padding_channel_right - 2 * pool1_norm1_depth_radius;
                             }
                             if ((c_idx * pool1_norm1_inner_pe_parallel + pe_idx) == 0) {
                                 global_in_feature_c_start_idx = 0;
@@ -116,7 +118,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::LRN<LRN_config>(local_feature_in_LRN[pe_idx], local_feature_out_LRN[pe_idx], bias, alpha, beta, pool1_norm1_deepth_radius);
+                            nnet::LRN<LRN_config>(local_feature_in_LRN[pe_idx], local_feature_out_LRN[pe_idx], bias, alpha, beta, pool1_norm1_depth_radius);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<LRN_local_feature_out_config, global_feature_config>(local_feature_out_LRN[pe_idx], global_feature[pool1_norm1_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -131,11 +133,11 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++)
             //copy out feature from BRAM to DRAM
             {
                 //index and shape of output feature in DRAM
-                int DDR_block_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx + pool1_norm1_deepth_radius - padding_channel_left;
+                int DDR_block_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx + pool1_norm1_depth_radius - padding_channel_left;
                 int DDR_block_out_feature_h_start_idx = DDR_block_in_feature_h_start_idx;
                 int DDR_block_out_feature_w_start_idx = DDR_block_in_feature_w_start_idx;
                 if (outer_ic_idx == 0) DDR_block_out_feature_c_start_idx = 0; //handle padding
-                int DDR_block_out_feature_c_num = global_block_in_feature_c_num - 2 * pool1_norm1_deepth_radius + padding_channel_left + padding_channel_right;
+                int DDR_block_out_feature_c_num = global_block_in_feature_c_num - 2 * pool1_norm1_depth_radius + padding_channel_left + padding_channel_right;
                 int DDR_block_out_feature_h_num = global_block_in_feature_h_num;
                 int DDR_block_out_feature_w_num = global_block_in_feature_w_num;
 
@@ -188,13 +190,14 @@ const int pool1_norm1_outer_in_channel = DIV_CEIL(pool1_norm1_in_channel, pool1_
 const int pool1_norm1_outer_height = DIV_CEIL(pool1_norm1_in_height, HEIGHT_FEATURE_GLOBAL);
 const int pool1_norm1_outer_width = DIV_CEIL(pool1_norm1_in_width, WIDTH_FEATURE_GLOBAL);
 ///interval between blocks
-const int pool1_norm1_block_interval_channel = pool1_norm1_allocate_global_in_feature_num * (CHANNEL_FEATURE_GLOBAL - 2 * pool1_norm1_depth_radius);//the spacing between blocks
+const int pool1_norm1_block_interval_channel = DIV_CEIL(pool1_norm1_in_channel, pool1_norm1_outer_in_channel);
+//const int pool1_norm1_block_interval_channel = pool1_norm1_allocate_global_in_feature_num*( CHANNEL_FEATURE_GLOBAL- 2 * pool1_norm1_depth_radius);//the spacing between blocks
 const int pool1_norm1_block_interval_height = HEIGHT_FEATURE_GLOBAL;
 const int pool1_norm1_block_interval_width = WIDTH_FEATURE_GLOBAL;
 ///dim of blocks
 const int pool1_norm1_block_in_height = pool1_norm1_block_interval_height;
-const int pool1_norm1_block_in_width = pool1_norm1_block_interval_height;
-const int pool1_norm1_block_in_channel = pool1_norm1_allocate_global_in_feature_num * CHANNEL_FEATURE_GLOBAL;
+const int pool1_norm1_block_in_width = pool1_norm1_block_interval_width;
+const int pool1_norm1_block_in_channel = pool1_norm1_block_interval_channel + pool1_norm1_block_overlap_channel;
 ///set parallism
 const int pool1_norm1_inner_pe_parallel = NUM_PE_LRN;//prallelism not supported
 /////////////allocate_config/////////////

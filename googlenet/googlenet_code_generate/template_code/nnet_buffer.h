@@ -47,7 +47,7 @@ namespace nnet{
 				}
 			}
 		}
-		std::cout << std::endl;
+		//std::cout << std::endl;
 	} // end clear buffer
 
 

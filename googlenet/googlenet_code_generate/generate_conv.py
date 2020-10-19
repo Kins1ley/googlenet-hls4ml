@@ -6,8 +6,8 @@ allocate_config_mark="/////////////allocate_config/////////////"
 
 
 layer_config_dict={"left_bracket":"{","right_bracket":"}"}
-layer_config_dict["conv_layer_name"]="conv1_7x7_s2"
-layer_config_dict["conv_layer_type"]="CONV7x7_S2"
+layer_config_dict["layer_name"]="conv1_7x7_s2"
+layer_config_dict["layer_type"]="CONV7x7_S2"
 layer_config_dict["global_weight_name"]="global_weight_7x7"
 layer_config_dict["global_weight_type"]="WEIGHT_GLOBAL_7x7"
 layer_config_dict["DDR_weight_type"]="DDR_weight_7x7"
@@ -16,7 +16,7 @@ layer_config_dict["layer_input_name"]="image_in"
 layer_config_dict["layer_output_name"]="conv1_7x7_s2_1"
 layer_config_dict["DDR_in_feature"]="DDR_feature_0"
 layer_config_dict["DDR_out_feature"]="DDR_feature_1"
-def generate_conv_template():
+def generate_conv_template_from_origin():
     """
     generate the template file
     :return:
@@ -27,16 +27,14 @@ def generate_conv_template():
             text = f.readline()
             if not text:
                 break
-            text = text.replace("{","{left_bracket")
-            text = text.replace("}","right_bracket}")
-            text = text.replace("{left_bracket", "{left_bracket}")
-            text = text.replace("right_bracket}", "{right_bracket}")
+            text = text.replace("{","{{")
+            text = text.replace("}","}}")
             text = text.replace("image_in_config", "{layer_input_name}_config")
             text = text.replace("conv1_7x7_s2_1_config", "{layer_output_name}_config")
             text = text.replace("image_in", "{DDR_in_feature}")
             text = text.replace("conv1_7x7_s2_1", "{DDR_out_feature}")
-            text = text.replace("conv1_7x7_s2","{conv_layer_name}")
-            text = text.replace("CONV7x7_S2","{conv_layer_type}")
+            text = text.replace("conv1_7x7_s2","{layer_name}")
+            text = text.replace("CONV7x7_S2","{layer_type}")
             text = text.replace("conv_output_reuse7x7", "{pe_name}")
             text = text.replace("global_weight_7x7", "{global_weight_name}")
             text = text.replace("WEIGHT_GLOBAL_7x7", "{global_weight_type}")
@@ -50,18 +48,17 @@ def generate_conv_template():
     #os.remove("conv_template.h")
     os.rename("./origin_code/conv_template_tmp.h", "./function_templates/conv_template.h")
 
-def generate_conv(layer_config_dict,template_name="./function_templates/conv_template.h",out_file=None,part="top_function"):
+def generate_conv(template_name="./function_templates/conv_template.h",part="top_function"):
     """
     generate code according to the template file
-    :param layer_config_dict:
     :param template_name:
-    :param out_file: if None, show the result on the screen
     :param part: the part to write in the file.
     :return:
     """
     found_top_function=False
     found_template_config=False
     found_allocate_config=False
+    code=""
     with open(template_name) as f:
         while True:
             text = f.readline()
@@ -92,34 +89,9 @@ def generate_conv(layer_config_dict,template_name="./function_templates/conv_tem
             if (part=="top_function" and found_top_function) or \
                 (part=="template_config" and found_template_config) or \
                 (part=="allocate_config" and found_allocate_config):
-                if out_file is not None:
-                    print(text.format(left_bracket=layer_config_dict["left_bracket"],
-                                      right_bracket=layer_config_dict["right_bracket"],
-                                      conv_layer_name=layer_config_dict["conv_layer_name"],
-                                      conv_layer_type=layer_config_dict["conv_layer_type"],
-                                      global_weight_name=layer_config_dict["global_weight_name"],
-                                      global_weight_type=layer_config_dict["global_weight_type"],
-                                      pe_name=layer_config_dict["pe_name"],
-                                      layer_input_name=layer_config_dict["layer_input_name"],
-                                      layer_output_name=layer_config_dict["layer_output_name"],
-                                      DDR_weight_type=layer_config_dict["DDR_weight_type"],
-                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
-                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
-                                      ), end="",file=out_file)
-                else:
-                    print(text.format(left_bracket=layer_config_dict["left_bracket"],
-                                      right_bracket=layer_config_dict["right_bracket"],
-                                      conv_layer_name=layer_config_dict["conv_layer_name"],
-                                      conv_layer_type=layer_config_dict["conv_layer_type"],
-                                      global_weight_name=layer_config_dict["global_weight_name"],
-                                      global_weight_type=layer_config_dict["global_weight_type"],
-                                      pe_name=layer_config_dict["pe_name"],
-                                      layer_input_name=layer_config_dict["layer_input_name"],
-                                      layer_output_name=layer_config_dict["layer_output_name"],
-                                      DDR_weight_type = layer_config_dict["DDR_weight_type"],
-                                      DDR_in_feature=layer_config_dict["DDR_in_feature"],
-                                      DDR_out_feature=layer_config_dict["DDR_out_feature"]
-                                      ), end="")
+                code+=text
+    return code
 if __name__ == "__main__":
-    generate_conv_template()
-    generate_conv(layer_config_dict)
+    generate_conv_template_from_origin()
+    code=generate_conv()
+    #print(code)

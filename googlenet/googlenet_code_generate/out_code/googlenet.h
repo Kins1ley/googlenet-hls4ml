@@ -10,6 +10,7 @@ void googlenet(
 	FIX_INT20 DDR_feature_0[DDR_FEATURE_LENGTH],
 	FIX_INT20 DDR_feature_1[DDR_FEATURE_LENGTH],
 	FIX_INT20 DDR_feature_2[DDR_FEATURE_LENGTH],
+
 	//required weight, bias
 	//save features that are too large to save in BRAM
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(Junpeng)
@@ -17,24 +18,22 @@ void googlenet(
 	FIX_INT8 DDR_weight_5x5[DDR_WEIGHT_5x5_CHANNEL][5][5],
 	FIX_INT8 DDR_weight_3x3[DDR_WEIGHT_3x3_CHANNEL][3][3],
 	FIX_INT8 DDR_weight_1x1[DDR_WEIGHT_1x1_CHANNEL][1][1],
-	FIX_INT20 DDR_bias[DDR_BIAS_NUM],
+	FIX_INT20 DDR_bias[DDR_BIAS_NUM]
 	/////DRAM_insert/////
 	/////////////////////////////// inception(4a) -> inception(4e) max pool////////////////////////////(Binwu)
 
 
 	/////////////////////////////// inception(5a) -> linear              ////////////////////////////(Qi)
 
-
-
 ) {
 #pragma HLS INTERFACE m_axi depth=IMAGE_CH*IMAGE_H*IMAGE_W																port=data_0					offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_0			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_FEATURE_LENGTH																	port=DDR_feature_2			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_OUT_CHANNEL*DDR_WEIGHT_7x7_IN_CHANNEL*7*7								port=DDR_weight7x7			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_OUT_CHANNEL*DDR_WEIGHT_5x5_IN_CHANNEL*5*5								port=DDR_weight5x5			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_OUT_CHANNEL*DDR_WEIGHT_3x3_IN_CHANNEL*3*3								port=DDR_weight3x3			offset=slave bundle=INPUT
-#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_OUT_CHANNEL*DDR_WEIGHT_1x1_IN_CHANNEL*1*1								port=DDR_weight1x1			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_7x7_CHANNEL*7*7															port=DDR_weight_7x7			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_5x5_CHANNEL*5*5															port=DDR_weight_5x5			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_3x3_CHANNEL*3*3															port=DDR_weight_3x3			offset=slave bundle=INPUT
+#pragma HLS INTERFACE m_axi depth=DDR_WEIGHT_1x1_CHANNEL*1*1															port=DDR_weight_1x1			offset=slave bundle=INPUT
 #pragma HLS INTERFACE m_axi depth=DDR_BIAS_NUM																			port=DDR_bias				offset=slave bundle=INPUT
 /////interface_insert/////
 
@@ -79,8 +78,8 @@ void googlenet(
 
 	//other param of LRN
 	static FIX_INT20 bias = 1;
-	static FIX_INT20 alpha = 1;
-	static FIX_INT20 beta = 1;
+	static FIX_INT20 alpha = 0.00009999999747378752;
+	static FIX_INT20 beta = 0.75;
 
 	/////top_function_insert/////
 //conv1_7x7_s2
@@ -127,14 +126,14 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_data_0_config, global_feature_config>(DDR_feature_0, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_data_0_config, global_feature_config>(data_0, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_data_0_config, global_feature_config>(DDR_feature_0, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_data_0_config, global_feature_config>(data_0, global_feature[conv1_7x7_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -142,11 +141,11 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_7x7) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_7x7_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv1_7x7_s2_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
 							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_7x7_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv1_7x7_s2_config, WEIGHT_GLOBAL_7x7_config>(DDR_weight_7x7, global_weight_7x7[conv1_7x7_s2_allocate_global_weight_7x7_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_7x7,
 							conv1_7x7_s2_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -329,21 +328,22 @@ for (int outer_h_idx = 0; outer_h_idx < conv1_7x7_s2_outer_height; outer_h_idx++
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_2_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv1_7x7_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_2_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv1_7x7_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_2_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv1_7x7_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv1_7x7_s2_2_config>(global_feature[conv1_7x7_s2_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv1_7x7_s2_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //pool1_3x3_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -491,7 +491,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S2[pe_idx], global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -527,12 +527,178 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool1_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
+                            pool1_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                    else
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
+                            pool1_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                }
+            }//end copy out feature from BRAM to DRAM
+
+        }// end outer_ic loop
+    }
+}
+
+//pool1_norm1
+//outer loop
+//copy data and call PE to do calculation
+for (int outer_h_idx = 0; outer_h_idx < pool1_norm1_outer_height; outer_h_idx++) {
+    for (int outer_w_idx = 0; outer_w_idx < pool1_norm1_outer_width; outer_w_idx++) {
+        for (int outer_ic_idx = 0; outer_ic_idx < pool1_norm1_outer_in_channel; outer_ic_idx++) {
+
+            //calculate the index to copy features.
+            //index and shape of input feature in DRAM
+            int DDR_block_in_feature_h_start_idx = outer_h_idx * pool1_norm1_block_interval_height;
+            int DDR_block_in_feature_w_start_idx = outer_w_idx * pool1_norm1_block_interval_width;
+            int DDR_block_in_feature_c_start_idx = outer_ic_idx * pool1_norm1_block_interval_channel;
+            int global_block_in_feature_c_num = pool1_norm1_block_in_channel;
+            int global_block_in_feature_h_num = pool1_norm1_block_in_height;
+            int global_block_in_feature_w_num = pool1_norm1_block_in_width;
+
+            {
+                //handle the last iteration of the loop
+                if (outer_h_idx == pool1_norm1_outer_height - 1) {
+                    global_block_in_feature_h_num = pool1_norm1_in_height - DDR_block_in_feature_h_start_idx;
+                }
+                if (outer_w_idx == pool1_norm1_outer_width - 1) {
+                    global_block_in_feature_w_num = pool1_norm1_in_width - DDR_block_in_feature_w_start_idx;
+                }
+                if (outer_ic_idx == pool1_norm1_outer_in_channel - 1) {
+                    global_block_in_feature_c_num = pool1_norm1_in_channel - outer_ic_idx * pool1_norm1_block_interval_channel;
+                }
+            }
+            //copy input feature from DRAM to global BRAM
+            for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
+                if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
+                    nnet::clear_buffer<global_feature_config>(global_feature[pool1_norm1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool1_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[pool1_norm1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                        DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
+                        DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
+                }
+                else {
+                    nnet::clear_buffer<global_feature_config>(global_feature[pool1_norm1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool1_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[pool1_norm1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                        DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
+                        DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
+                }
+            }
+
+            //dims of inner loop
+            int inner_height = DIV_CEIL(global_block_in_feature_h_num, OUT_HEIGHT_LRN);
+            int inner_width = DIV_CEIL(global_block_in_feature_w_num, OUT_WIDTH_LRN);
+            int padding_channel_left = (outer_ic_idx == 0) ? pool1_norm1_depth_radius : 0;
+            int padding_channel_right = (outer_ic_idx == (pool1_norm1_outer_in_channel - 1)) ? pool1_norm1_depth_radius : 0;
+            int inner_channel = DIV_CEIL(global_block_in_feature_c_num - 2 * pool1_norm1_depth_radius + padding_channel_left + padding_channel_right, pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius));
+            //do inner loop
+            for (int h_idx = 0; h_idx < inner_height; h_idx++) {
+                for (int w_idx = 0; w_idx < inner_width; w_idx++) {
+                    for (int c_idx = 0; c_idx < inner_channel; c_idx++) {
+                        int inner_pe_parallel = pool1_norm1_inner_pe_parallel;
+                        //if (c_idx == inner_channel - 1) inner_pe_parallel = DIV_CEIL(global_block_in_feature_c_num - c_idx * pool1_norm1_inner_pe_parallel * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius), (N_CHAN_LRN - 2 * pool1_norm1_depth_radius));
+#pragma HLS pipeline
+                        for (int pe_idx = 0; pe_idx < inner_pe_parallel; pe_idx++) {
+#pragma HLS unroll
+                            //index of input feature in global BRAM
+                            int global_in_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius) - padding_channel_left;
+                            int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN; //
+                            int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;//
+
+                            //index and shape of input feature in local BRAM
+                            int local_in_feature_c_start_idx = 0;
+                            int local_in_feature_h_start_idx = 0;
+                            int local_in_feature_w_start_idx = 0;
+                            int local_in_feature_c_num = N_CHAN_LRN;
+                            int local_in_feature_h_num = IN_HEIGHT_LRN;
+                            int local_in_feature_w_num = IN_WIDTH_LRN;
+
+                            //index of output feature in global BRAM
+                            int global_out_feature_c_start_idx = (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius);
+                            int global_out_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN;
+                            int global_out_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;
+
+                            //index and shape of output feature in local BRAM
+                            int local_out_feature_c_start_idx = 0;
+                            int local_out_feature_h_start_idx = 0;
+                            int local_out_feature_w_start_idx = 0;
+                            int local_out_feature_c_num = N_CHAN_LRN - 2 * pool1_norm1_depth_radius;
+                            int local_out_feature_h_num = OUT_HEIGHT_LRN;
+                            int local_out_feature_w_num = OUT_WIDTH_LRN;
+
+
+                            if (h_idx == inner_height - 1) {
+                                //handle the last iteration of the loop and padding
+                                local_in_feature_h_num = global_block_in_feature_h_num - h_idx * OUT_HEIGHT_LRN;
+                                local_out_feature_h_num = local_in_feature_h_num;
+                            }
+
+                            if (w_idx == inner_width - 1) {
+                                //handle the last iteration of the loop and padding
+                                local_in_feature_w_num = global_block_in_feature_w_num - w_idx * OUT_WIDTH_LRN;
+                                local_out_feature_w_num = local_in_feature_w_num;
+                            }
+
+                            if ((c_idx == inner_channel - 1) && (pe_idx == (inner_pe_parallel - 1))) {
+                                //handle the last iteration of the loop
+                                local_in_feature_c_num = global_block_in_feature_c_num + padding_channel_right + padding_channel_left - (c_idx * pool1_norm1_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * pool1_norm1_depth_radius);
+                                local_out_feature_c_num = local_in_feature_c_num + padding_channel_right - 2 * pool1_norm1_depth_radius;
+                            }
+                            if ((c_idx * pool1_norm1_inner_pe_parallel + pe_idx) == 0) {
+                                global_in_feature_c_start_idx = 0;
+                                local_in_feature_c_start_idx = padding_channel_left;
+                                local_in_feature_c_num -= padding_channel_left;
+                            }
+                            //copy input feature from global BRAM to local BRAM
+                            //copy input feature
+                            //std::cout << "clearing buffer for input padding" << std::endl;
+                            nnet::clear_buffer<LRN_local_feature_in_config>(local_feature_in_LRN[pe_idx]);
+                            nnet::copy_features_g2l<global_feature_config, LRN_local_feature_in_config>(global_feature[pool1_norm1_allocate_global_in_feature_start_idx + global_in_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_in_LRN[pe_idx],
+                                global_in_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,
+                                global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
+                                global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
+                            //call PE and do calculation
+                            nnet::LRN<LRN_config>(local_feature_in_LRN[pe_idx], local_feature_out_LRN[pe_idx], bias, alpha, beta, pool1_norm1_depth_radius);
+
+                            //copy output feature from local BRAM to global BRAM
+                            nnet::copy_features_l2g<LRN_local_feature_out_config, global_feature_config>(local_feature_out_LRN[pe_idx], global_feature[pool1_norm1_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
+                                global_out_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_out_feature_c_num,
+                                global_out_feature_h_start_idx, local_out_feature_h_num,
+                                global_out_feature_w_start_idx, local_out_feature_w_num);
+
+                        }
+                    }
+                }
+            }//end inner loop
+            //copy out feature from BRAM to DRAM
+            {
+                //index and shape of output feature in DRAM
+                int DDR_block_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx + pool1_norm1_depth_radius - padding_channel_left;
+                int DDR_block_out_feature_h_start_idx = DDR_block_in_feature_h_start_idx;
+                int DDR_block_out_feature_w_start_idx = DDR_block_in_feature_w_start_idx;
+                if (outer_ic_idx == 0) DDR_block_out_feature_c_start_idx = 0; //handle padding
+                int DDR_block_out_feature_c_num = global_block_in_feature_c_num - 2 * pool1_norm1_depth_radius + padding_channel_left + padding_channel_right;
+                int DDR_block_out_feature_h_num = global_block_in_feature_h_num;
+                int DDR_block_out_feature_w_num = global_block_in_feature_w_num;
+
+                if (outer_ic_idx == pool1_norm1_outer_in_channel - 1) {
+                    //handle the last iteration of the loop
+                    DDR_block_out_feature_c_num = pool1_norm1_in_channel - DDR_block_out_feature_c_start_idx;
+                }
+
+                //copy output feature from global BRAM to DRAM
+                for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
+                    if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_norm1_1_config>(global_feature[pool1_norm1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
                             DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_3x3_s2_1_config>(global_feature[pool1_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool1_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool1_norm1_1_config>(global_feature[pool1_norm1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
                             DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
@@ -541,6 +707,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool1_3x3_s2_outer_height; outer_h_idx++
         }// end outer_ic loop
     }
 }
+
 //conv2_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -600,11 +767,11 @@ for (int outer_h_idx = 0; outer_h_idx < conv2_3x3_reduce_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[conv2_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv2_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[conv2_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							conv2_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[conv2_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv2_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[conv2_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							conv2_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -788,20 +955,21 @@ for (int outer_h_idx = 0; outer_h_idx < conv2_3x3_reduce_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_reduce_2_config>(global_feature[conv2_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv2_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv2_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_reduce_2_config>(global_feature[conv2_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv2_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv2_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //conv2_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -846,14 +1014,14 @@ for (int outer_h_idx = 0; outer_h_idx < conv2_3x3_outer_height; outer_h_idx++) {
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_reduce_2_config, global_feature_config>(DDR_feature_0, global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_reduce_2_config, global_feature_config>(DDR_feature_1, global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_reduce_2_config, global_feature_config>(DDR_feature_0, global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_reduce_2_config, global_feature_config>(DDR_feature_1, global_feature[conv2_3x3_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -861,11 +1029,11 @@ for (int outer_h_idx = 0; outer_h_idx < conv2_3x3_outer_height; outer_h_idx++) {
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[conv2_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv2_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[conv2_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							conv2_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[conv2_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_conv2_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[conv2_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							conv2_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -1048,21 +1216,188 @@ for (int outer_h_idx = 0; outer_h_idx < conv2_3x3_outer_height; outer_h_idx++) {
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_2_config>(global_feature[conv2_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv2_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_2_config>(global_feature[conv2_3x3_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv2_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_2_config>(global_feature[conv2_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								conv2_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_3x3_2_config>(global_feature[conv2_3x3_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								conv2_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
+//conv2_norm2
+//outer loop
+//copy data and call PE to do calculation
+for (int outer_h_idx = 0; outer_h_idx < conv2_norm2_outer_height; outer_h_idx++) {
+    for (int outer_w_idx = 0; outer_w_idx < conv2_norm2_outer_width; outer_w_idx++) {
+        for (int outer_ic_idx = 0; outer_ic_idx < conv2_norm2_outer_in_channel; outer_ic_idx++) {
+
+            //calculate the index to copy features.
+            //index and shape of input feature in DRAM
+            int DDR_block_in_feature_h_start_idx = outer_h_idx * conv2_norm2_block_interval_height;
+            int DDR_block_in_feature_w_start_idx = outer_w_idx * conv2_norm2_block_interval_width;
+            int DDR_block_in_feature_c_start_idx = outer_ic_idx * conv2_norm2_block_interval_channel;
+            int global_block_in_feature_c_num = conv2_norm2_block_in_channel;
+            int global_block_in_feature_h_num = conv2_norm2_block_in_height;
+            int global_block_in_feature_w_num = conv2_norm2_block_in_width;
+
+            {
+                //handle the last iteration of the loop
+                if (outer_h_idx == conv2_norm2_outer_height - 1) {
+                    global_block_in_feature_h_num = conv2_norm2_in_height - DDR_block_in_feature_h_start_idx;
+                }
+                if (outer_w_idx == conv2_norm2_outer_width - 1) {
+                    global_block_in_feature_w_num = conv2_norm2_in_width - DDR_block_in_feature_w_start_idx;
+                }
+                if (outer_ic_idx == conv2_norm2_outer_in_channel - 1) {
+                    global_block_in_feature_c_num = conv2_norm2_in_channel - outer_ic_idx * conv2_norm2_block_interval_channel;
+                }
+            }
+            //copy input feature from DRAM to global BRAM
+            for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
+                if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
+                    nnet::clear_buffer<global_feature_config>(global_feature[conv2_norm2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
+                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_2_config, global_feature_config>(DDR_feature_0, global_feature[conv2_norm2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                        DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
+                        DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
+                }
+                else {
+                    nnet::clear_buffer<global_feature_config>(global_feature[conv2_norm2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
+                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_3x3_2_config, global_feature_config>(DDR_feature_0, global_feature[conv2_norm2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                        DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
+                        DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
+                }
+            }
+
+            //dims of inner loop
+            int inner_height = DIV_CEIL(global_block_in_feature_h_num, OUT_HEIGHT_LRN);
+            int inner_width = DIV_CEIL(global_block_in_feature_w_num, OUT_WIDTH_LRN);
+            int padding_channel_left = (outer_ic_idx == 0) ? conv2_norm2_depth_radius : 0;
+            int padding_channel_right = (outer_ic_idx == (conv2_norm2_outer_in_channel - 1)) ? conv2_norm2_depth_radius : 0;
+            int inner_channel = DIV_CEIL(global_block_in_feature_c_num - 2 * conv2_norm2_depth_radius + padding_channel_left + padding_channel_right, conv2_norm2_inner_pe_parallel * (N_CHAN_LRN - 2 * conv2_norm2_depth_radius));
+            //do inner loop
+            for (int h_idx = 0; h_idx < inner_height; h_idx++) {
+                for (int w_idx = 0; w_idx < inner_width; w_idx++) {
+                    for (int c_idx = 0; c_idx < inner_channel; c_idx++) {
+                        int inner_pe_parallel = conv2_norm2_inner_pe_parallel;
+                        //if (c_idx == inner_channel - 1) inner_pe_parallel = DIV_CEIL(global_block_in_feature_c_num - c_idx * conv2_norm2_inner_pe_parallel * (N_CHAN_LRN - 2 * conv2_norm2_depth_radius), (N_CHAN_LRN - 2 * conv2_norm2_depth_radius));
+#pragma HLS pipeline
+                        for (int pe_idx = 0; pe_idx < inner_pe_parallel; pe_idx++) {
+#pragma HLS unroll
+                            //index of input feature in global BRAM
+                            int global_in_feature_c_start_idx = (c_idx * conv2_norm2_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * conv2_norm2_depth_radius) - padding_channel_left;
+                            int global_in_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN; //
+                            int global_in_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;//
+
+                            //index and shape of input feature in local BRAM
+                            int local_in_feature_c_start_idx = 0;
+                            int local_in_feature_h_start_idx = 0;
+                            int local_in_feature_w_start_idx = 0;
+                            int local_in_feature_c_num = N_CHAN_LRN;
+                            int local_in_feature_h_num = IN_HEIGHT_LRN;
+                            int local_in_feature_w_num = IN_WIDTH_LRN;
+
+                            //index of output feature in global BRAM
+                            int global_out_feature_c_start_idx = (c_idx * conv2_norm2_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * conv2_norm2_depth_radius);
+                            int global_out_feature_h_start_idx = h_idx * OUT_HEIGHT_LRN;
+                            int global_out_feature_w_start_idx = w_idx * OUT_WIDTH_LRN;
+
+                            //index and shape of output feature in local BRAM
+                            int local_out_feature_c_start_idx = 0;
+                            int local_out_feature_h_start_idx = 0;
+                            int local_out_feature_w_start_idx = 0;
+                            int local_out_feature_c_num = N_CHAN_LRN - 2 * conv2_norm2_depth_radius;
+                            int local_out_feature_h_num = OUT_HEIGHT_LRN;
+                            int local_out_feature_w_num = OUT_WIDTH_LRN;
+
+
+                            if (h_idx == inner_height - 1) {
+                                //handle the last iteration of the loop and padding
+                                local_in_feature_h_num = global_block_in_feature_h_num - h_idx * OUT_HEIGHT_LRN;
+                                local_out_feature_h_num = local_in_feature_h_num;
+                            }
+
+                            if (w_idx == inner_width - 1) {
+                                //handle the last iteration of the loop and padding
+                                local_in_feature_w_num = global_block_in_feature_w_num - w_idx * OUT_WIDTH_LRN;
+                                local_out_feature_w_num = local_in_feature_w_num;
+                            }
+
+                            if ((c_idx == inner_channel - 1) && (pe_idx == (inner_pe_parallel - 1))) {
+                                //handle the last iteration of the loop
+                                local_in_feature_c_num = global_block_in_feature_c_num + padding_channel_right + padding_channel_left - (c_idx * conv2_norm2_inner_pe_parallel + pe_idx) * (N_CHAN_LRN - 2 * conv2_norm2_depth_radius);
+                                local_out_feature_c_num = local_in_feature_c_num + padding_channel_right - 2 * conv2_norm2_depth_radius;
+                            }
+                            if ((c_idx * conv2_norm2_inner_pe_parallel + pe_idx) == 0) {
+                                global_in_feature_c_start_idx = 0;
+                                local_in_feature_c_start_idx = padding_channel_left;
+                                local_in_feature_c_num -= padding_channel_left;
+                            }
+                            //copy input feature from global BRAM to local BRAM
+                            //copy input feature
+                            //std::cout << "clearing buffer for input padding" << std::endl;
+                            nnet::clear_buffer<LRN_local_feature_in_config>(local_feature_in_LRN[pe_idx]);
+                            nnet::copy_features_g2l<global_feature_config, LRN_local_feature_in_config>(global_feature[conv2_norm2_allocate_global_in_feature_start_idx + global_in_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL], local_feature_in_LRN[pe_idx],
+                                global_in_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_in_feature_c_start_idx, local_in_feature_c_num,
+                                global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
+                                global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
+                            //call PE and do calculation
+                            nnet::LRN<LRN_config>(local_feature_in_LRN[pe_idx], local_feature_out_LRN[pe_idx], bias, alpha, beta, conv2_norm2_depth_radius);
+
+                            //copy output feature from local BRAM to global BRAM
+                            nnet::copy_features_l2g<LRN_local_feature_out_config, global_feature_config>(local_feature_out_LRN[pe_idx], global_feature[conv2_norm2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
+                                global_out_feature_c_start_idx % CHANNEL_FEATURE_GLOBAL, local_out_feature_c_num,
+                                global_out_feature_h_start_idx, local_out_feature_h_num,
+                                global_out_feature_w_start_idx, local_out_feature_w_num);
+
+                        }
+                    }
+                }
+            }//end inner loop
+            //copy out feature from BRAM to DRAM
+            {
+                //index and shape of output feature in DRAM
+                int DDR_block_out_feature_c_start_idx = DDR_block_in_feature_c_start_idx + conv2_norm2_depth_radius - padding_channel_left;
+                int DDR_block_out_feature_h_start_idx = DDR_block_in_feature_h_start_idx;
+                int DDR_block_out_feature_w_start_idx = DDR_block_in_feature_w_start_idx;
+                if (outer_ic_idx == 0) DDR_block_out_feature_c_start_idx = 0; //handle padding
+                int DDR_block_out_feature_c_num = global_block_in_feature_c_num - 2 * conv2_norm2_depth_radius + padding_channel_left + padding_channel_right;
+                int DDR_block_out_feature_h_num = global_block_in_feature_h_num;
+                int DDR_block_out_feature_w_num = global_block_in_feature_w_num;
+
+                if (outer_ic_idx == conv2_norm2_outer_in_channel - 1) {
+                    //handle the last iteration of the loop
+                    DDR_block_out_feature_c_num = conv2_norm2_in_channel - DDR_block_out_feature_c_start_idx;
+                }
+
+                //copy output feature from global BRAM to DRAM
+                for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
+                    if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_norm2_1_config>(global_feature[conv2_norm2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
+                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                    else
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_conv2_norm2_1_config>(global_feature[conv2_norm2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
+                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                }
+            }//end copy out feature from BRAM to DRAM
+
+        }// end outer_ic loop
+    }
+}
+
 //pool2_3x3_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -1095,14 +1430,14 @@ for (int outer_h_idx = 0; outer_h_idx < pool2_3x3_s2_outer_height; outer_h_idx++
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_norm2_1_config, global_feature_config>(DDR_feature_0, global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_norm2_1_config, global_feature_config>(DDR_feature_1, global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_norm2_1_config, global_feature_config>(DDR_feature_0, global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_conv2_norm2_1_config, global_feature_config>(DDR_feature_1, global_feature[pool2_3x3_s2_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -1210,7 +1545,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool2_3x3_s2_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S2[pe_idx], global_feature[pool2_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -1245,21 +1580,22 @@ for (int outer_h_idx = 0; outer_h_idx < pool2_3x3_s2_outer_height; outer_h_idx++
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool2_3x3_s2_1_config>(global_feature[pool2_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool2_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool2_3x3_s2_1_config>(global_feature[pool2_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool2_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool2_3x3_s2_1_config>(global_feature[pool2_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool2_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool2_3x3_s2_1_config>(global_feature[pool2_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool2_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_3a_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -1319,11 +1655,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -1507,20 +1843,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_1x1_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3a_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -1580,11 +1917,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -1767,21 +2104,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_3x3_reduce_2_config>(global_feature[inception_3a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_3x3_reduce_2_config>(global_feature[inception_3a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_3x3_reduce_2_config>(global_feature[inception_3a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_3x3_reduce_2_config>(global_feature[inception_3a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3a_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -1841,11 +2179,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_3a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_3a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -2029,20 +2367,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3a_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -2102,11 +2441,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -2289,21 +2628,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_5x5_reduce_2_config>(global_feature[inception_3a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_5x5_reduce_2_config>(global_feature[inception_3a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_5x5_reduce_2_config>(global_feature[inception_3a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_5x5_reduce_2_config>(global_feature[inception_3a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3a_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -2363,11 +2703,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_3a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_3a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -2551,20 +2891,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3a_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -2712,7 +3053,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_3a_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -2747,21 +3088,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_pool_1_config>(global_feature[inception_3a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_3a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_pool_1_config>(global_feature[inception_3a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_3a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_pool_1_config>(global_feature[inception_3a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_3a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_pool_1_config>(global_feature[inception_3a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_3a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_3a_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -2821,11 +3163,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -3009,20 +3351,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3a_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3a_output_1_config>(global_feature[inception_3a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3a_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -3067,14 +3410,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_1x1_outer_height; outer_h_i
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -3082,11 +3425,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -3269,21 +3612,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_1x1_outer_height; outer_h_i
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -3328,14 +3672,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_3x3_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -3343,11 +3687,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -3530,21 +3874,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_3x3_reduce_2_config>(global_feature[inception_3b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_3x3_reduce_2_config>(global_feature[inception_3b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_3x3_reduce_2_config>(global_feature[inception_3b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_3x3_reduce_2_config>(global_feature[inception_3b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -3604,11 +3949,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_3b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_3b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_3b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -3792,20 +4137,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -3850,14 +4196,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_5x5_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -3865,11 +4211,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -4052,21 +4398,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_5x5_reduce_2_config>(global_feature[inception_3b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_5x5_reduce_2_config>(global_feature[inception_3b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_5x5_reduce_2_config>(global_feature[inception_3b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_5x5_reduce_2_config>(global_feature[inception_3b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -4126,11 +4473,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_3b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_3b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_3b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -4314,20 +4661,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_3b_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -4360,14 +4708,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_pool_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_3a_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_3b_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -4475,7 +4823,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_3b_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -4510,21 +4858,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_pool_1_config>(global_feature[inception_3b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_3b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_pool_1_config>(global_feature[inception_3b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_3b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_pool_1_config>(global_feature[inception_3b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_3b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_pool_1_config>(global_feature[inception_3b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_3b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_3b_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -4584,11 +4933,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_3b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_3b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_3b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -4772,20 +5121,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_3b_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_3b_output_1_config>(global_feature[inception_3b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_3b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_3b_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //pool3_3x3_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -4933,7 +5283,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool3_3x3_s2_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S2[pe_idx], global_feature[pool3_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -4969,20 +5319,21 @@ for (int outer_h_idx = 0; outer_h_idx < pool3_3x3_s2_outer_height; outer_h_idx++
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool3_3x3_s2_1_config>(global_feature[pool3_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool3_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool3_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool3_3x3_s2_1_config>(global_feature[pool3_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool3_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool3_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4a_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -5027,14 +5378,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_1x1_outer_height; outer_h_i
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -5042,11 +5393,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -5229,21 +5580,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_1x1_outer_height; outer_h_i
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4a_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -5288,14 +5640,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_3x3_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -5303,11 +5655,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -5490,21 +5842,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_3x3_reduce_2_config>(global_feature[inception_4a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_3x3_reduce_2_config>(global_feature[inception_4a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_3x3_reduce_2_config>(global_feature[inception_4a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_3x3_reduce_2_config>(global_feature[inception_4a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4a_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -5564,11 +5917,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -5752,20 +6105,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4a_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -5810,14 +6164,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_5x5_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -5825,11 +6179,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -6012,21 +6366,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_5x5_reduce_2_config>(global_feature[inception_4a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_5x5_reduce_2_config>(global_feature[inception_4a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_5x5_reduce_2_config>(global_feature[inception_4a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_5x5_reduce_2_config>(global_feature[inception_4a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4a_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -6086,11 +6441,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -6274,20 +6629,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4a_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -6320,14 +6676,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_pool_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool3_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -6435,7 +6791,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_4a_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -6470,21 +6826,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_pool_1_config>(global_feature[inception_4a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_pool_1_config>(global_feature[inception_4a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_pool_1_config>(global_feature[inception_4a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_pool_1_config>(global_feature[inception_4a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4a_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -6544,11 +6901,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -6732,20 +7089,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4a_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4a_output_1_config>(global_feature[inception_4a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4a_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -6805,11 +7163,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -6993,20 +7351,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_1x1_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -7066,11 +7425,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -7253,21 +7612,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_3x3_reduce_2_config>(global_feature[inception_4b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_3x3_reduce_2_config>(global_feature[inception_4b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_3x3_reduce_2_config>(global_feature[inception_4b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_3x3_reduce_2_config>(global_feature[inception_4b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -7327,11 +7687,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -7515,20 +7875,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -7588,11 +7949,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -7775,21 +8136,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_5x5_reduce_2_config>(global_feature[inception_4b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_5x5_reduce_2_config>(global_feature[inception_4b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_5x5_reduce_2_config>(global_feature[inception_4b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_5x5_reduce_2_config>(global_feature[inception_4b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -7849,11 +8211,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -8037,20 +8399,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4b_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -8198,7 +8561,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_4b_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -8233,21 +8596,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_pool_1_config>(global_feature[inception_4b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_pool_1_config>(global_feature[inception_4b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_pool_1_config>(global_feature[inception_4b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_pool_1_config>(global_feature[inception_4b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4b_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -8307,11 +8671,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -8495,20 +8859,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4b_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4b_output_1_config>(global_feature[inception_4b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4b_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -8553,14 +8918,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_1x1_outer_height; outer_h_i
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -8568,11 +8933,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -8755,21 +9120,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_1x1_outer_height; outer_h_i
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -8814,14 +9180,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_3x3_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -8829,11 +9195,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -9016,21 +9382,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_3x3_reduce_2_config>(global_feature[inception_4c_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_3x3_reduce_2_config>(global_feature[inception_4c_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_3x3_reduce_2_config>(global_feature[inception_4c_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_3x3_reduce_2_config>(global_feature[inception_4c_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -9090,11 +9457,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4c_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4c_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4c_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4c_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4c_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4c_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -9278,20 +9645,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -9336,14 +9704,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_5x5_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -9351,11 +9719,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -9538,21 +9906,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_5x5_reduce_2_config>(global_feature[inception_4c_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_5x5_reduce_2_config>(global_feature[inception_4c_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_5x5_reduce_2_config>(global_feature[inception_4c_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_5x5_reduce_2_config>(global_feature[inception_4c_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -9612,11 +9981,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4c_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4c_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4c_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4c_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4c_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4c_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -9800,20 +10169,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4c_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -9846,14 +10216,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_pool_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4c_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -9961,7 +10331,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_4c_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -9996,21 +10366,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_pool_1_config>(global_feature[inception_4c_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4c_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_pool_1_config>(global_feature[inception_4c_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4c_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_pool_1_config>(global_feature[inception_4c_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4c_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_pool_1_config>(global_feature[inception_4c_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4c_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4c_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -10070,11 +10441,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4c_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4c_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4c_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -10258,20 +10629,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4c_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4c_output_1_config>(global_feature[inception_4c_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4c_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4c_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -10331,11 +10703,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -10519,20 +10891,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_1x1_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -10592,11 +10965,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -10779,21 +11152,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_3x3_reduce_2_config>(global_feature[inception_4d_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_3x3_reduce_2_config>(global_feature[inception_4d_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_3x3_reduce_2_config>(global_feature[inception_4d_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_3x3_reduce_2_config>(global_feature[inception_4d_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -10853,11 +11227,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4d_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4d_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4d_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4d_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4d_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4d_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -11041,20 +11415,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -11114,11 +11489,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -11301,21 +11676,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_5x5_reduce_2_config>(global_feature[inception_4d_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_5x5_reduce_2_config>(global_feature[inception_4d_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_5x5_reduce_2_config>(global_feature[inception_4d_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_5x5_reduce_2_config>(global_feature[inception_4d_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -11375,11 +11751,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4d_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4d_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4d_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4d_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4d_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4d_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -11563,20 +11939,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4d_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -11724,7 +12101,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_4d_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -11759,21 +12136,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_pool_1_config>(global_feature[inception_4d_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4d_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_pool_1_config>(global_feature[inception_4d_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4d_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_pool_1_config>(global_feature[inception_4d_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4d_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_pool_1_config>(global_feature[inception_4d_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4d_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4d_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -11833,11 +12211,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4d_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4d_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4d_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -12021,20 +12399,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4d_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4d_output_1_config>(global_feature[inception_4d_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4d_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4d_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -12079,14 +12458,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_1x1_outer_height; outer_h_i
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -12094,11 +12473,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -12281,21 +12660,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_1x1_outer_height; outer_h_i
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -12340,14 +12720,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_3x3_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -12355,11 +12735,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -12542,21 +12922,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_3x3_reduce_2_config>(global_feature[inception_4e_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_3x3_reduce_2_config>(global_feature[inception_4e_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_3x3_reduce_2_config>(global_feature[inception_4e_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_3x3_reduce_2_config>(global_feature[inception_4e_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -12616,11 +12997,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4e_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4e_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4e_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4e_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_4e_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_4e_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -12804,20 +13185,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -12862,14 +13244,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_5x5_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -12877,11 +13259,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -13064,21 +13446,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_5x5_reduce_2_config>(global_feature[inception_4e_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_5x5_reduce_2_config>(global_feature[inception_4e_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_5x5_reduce_2_config>(global_feature[inception_4e_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_5x5_reduce_2_config>(global_feature[inception_4e_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -13138,11 +13521,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4e_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4e_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4e_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4e_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_4e_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_4e_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -13326,20 +13709,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_4e_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -13372,14 +13756,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_pool_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_4d_output_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_4e_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -13487,7 +13871,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_4e_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -13522,21 +13906,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_pool_1_config>(global_feature[inception_4e_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4e_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_pool_1_config>(global_feature[inception_4e_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4e_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_pool_1_config>(global_feature[inception_4e_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_4e_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_pool_1_config>(global_feature[inception_4e_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_4e_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_4e_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -13596,11 +13981,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_4e_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_4e_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_4e_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -13784,20 +14169,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_4e_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_4e_output_1_config>(global_feature[inception_4e_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_4e_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_4e_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //pool4_3x3_s2
 //outer loop
 //copy data and call PE to do calculation
@@ -13945,7 +14331,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool4_3x3_s2_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S2>(local_feature_in_MAXPOOL3x3_S2[pe_idx], local_feature_out_MAXPOOL3x3_S2[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S2_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S2[pe_idx], global_feature[pool4_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -13981,20 +14367,21 @@ for (int outer_h_idx = 0; outer_h_idx < pool4_3x3_s2_outer_height; outer_h_idx++
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool4_3x3_s2_1_config>(global_feature[pool4_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool4_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool4_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
                         nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool4_3x3_s2_1_config>(global_feature[pool4_3x3_s2_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool4_3x3_s2_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool4_3x3_s2_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_5a_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -14039,14 +14426,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_1x1_outer_height; outer_h_i
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_1x1_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -14054,11 +14441,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -14241,21 +14628,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_1x1_outer_height; outer_h_i
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_1x1_allocate_global_out_feature_start_idx], DDR_feature_0,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5a_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -14300,14 +14688,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_3x3_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_3x3_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -14315,11 +14703,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -14502,21 +14890,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_3x3_reduce_2_config>(global_feature[inception_5a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_3x3_reduce_2_config>(global_feature[inception_5a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_3x3_reduce_2_config>(global_feature[inception_5a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_3x3_reduce_2_config>(global_feature[inception_5a_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5a_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -14576,11 +14965,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_5a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5a_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_5a_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -14764,20 +15153,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5a_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -14822,14 +15212,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_5x5_reduce_outer_height; ou
 				for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
 					if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
 					}
 					else {
 						nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
+						nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_5x5_reduce_allocate_global_in_feature_start_idx + global_in_feature_idx],
 							DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
 							DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
 							DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -14837,11 +15227,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -15024,21 +15414,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_5x5_reduce_2_config>(global_feature[inception_5a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_5x5_reduce_2_config>(global_feature[inception_5a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_5x5_reduce_2_config>(global_feature[inception_5a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_5x5_reduce_2_config>(global_feature[inception_5a_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5a_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -15098,11 +15489,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_5a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5a_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_5a_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -15286,20 +15677,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5a_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -15332,14 +15724,14 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_pool_outer_height; outer_h_
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_0, global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_pool4_3x3_s2_1_config, global_feature_config>(DDR_feature_1, global_feature[inception_5a_pool_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -15447,7 +15839,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_5a_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -15482,21 +15874,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_pool_1_config>(global_feature[inception_5a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_5a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_pool_1_config>(global_feature[inception_5a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_5a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_pool_1_config>(global_feature[inception_5a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_5a_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_pool_1_config>(global_feature[inception_5a_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_5a_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_5a_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -15556,11 +15949,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5a_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5a_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5a_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -15744,20 +16137,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5a_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5a_output_1_config>(global_feature[inception_5a_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5a_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5a_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_1x1
 //outer loop
 //copy data and call PE to do calculation
@@ -15817,11 +16211,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_1x1_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_1x1_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_1x1_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -16005,20 +16399,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_1x1_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_1x1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_1x1_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_1x1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_1x1_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_3x3_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -16078,11 +16473,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_3x3_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_3x3_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_3x3_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_3x3_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -16265,21 +16660,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_3x3_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_3x3_reduce_2_config>(global_feature[inception_5b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_3x3_reduce_2_config>(global_feature[inception_5b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_3x3_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_3x3_reduce_2_config>(global_feature[inception_5b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_3x3_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_3x3_reduce_2_config>(global_feature[inception_5b_3x3_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_3x3_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_3x3
 //outer loop
 //copy data and call PE to do calculation
@@ -16339,11 +16735,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_3x3_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_3x3) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_5b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_3x3_config, WEIGHT_GLOBAL_3x3_config>(DDR_weight_3x3, global_weight_3x3[inception_5b_3x3_allocate_global_weight_3x3_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_3x3,
 							inception_5b_3x3_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -16527,20 +16923,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_3x3_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_3x3_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_3x3_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_3x3_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_3x3_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_5x5_reduce
 //outer loop
 //copy data and call PE to do calculation
@@ -16600,11 +16997,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_5x5_reduce_outer_height; ou
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_5x5_reduce_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_5x5_reduce_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_5x5_reduce_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -16787,21 +17184,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_5x5_reduce_outer_height; ou
 					//copy output feature from global BRAM to DRAM
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_5x5_reduce_2_config>(global_feature[inception_5b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_5x5_reduce_2_config>(global_feature[inception_5b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_5x5_reduce_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
-							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_5x5_reduce_2_config>(global_feature[inception_5b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_5x5_reduce_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_5x5_reduce_2_config>(global_feature[inception_5b_5x5_reduce_allocate_global_out_feature_start_idx], DDR_feature_2,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_5x5_reduce_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_5x5
 //outer loop
 //copy data and call PE to do calculation
@@ -16861,11 +17259,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_5x5_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_5x5) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_5b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_5x5_config, WEIGHT_GLOBAL_5x5_config>(DDR_weight_5x5, global_weight_5x5[inception_5b_5x5_allocate_global_weight_5x5_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_5x5,
 							inception_5b_5x5_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -17049,20 +17447,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_5x5_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_5x5_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_5x5_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_5x5_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_5x5_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //inception_5b_pool
 //outer loop
 //copy data and call PE to do calculation
@@ -17210,7 +17609,7 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_pool_outer_height; outer_h_
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool3x3<pool2d_config_MAX3x3_S2>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
+                            nnet::pool3x3<pool2d_config_MAXPOOL3x3_S1>(local_feature_in_MAXPOOL3x3_S1[pe_idx], local_feature_out_MAXPOOL3x3_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<MAXPOOL3x3_S1_local_feature_out_config, global_feature_config>(local_feature_out_MAXPOOL3x3_S1[pe_idx], global_feature[inception_5b_pool_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -17245,21 +17644,22 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_pool_outer_height; outer_h_
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_pool_1_config>(global_feature[inception_5b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_5b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_pool_1_config>(global_feature[inception_5b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_5b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_pool_1_config>(global_feature[inception_5b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            inception_5b_pool_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_pool_1_config>(global_feature[inception_5b_pool_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_2,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            inception_5b_pool_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //inception_5b_pool_proj
 //outer loop
 //copy data and call PE to do calculation
@@ -17319,11 +17719,11 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_pool_proj_outer_height; out
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_inception_5b_pool_proj_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[inception_5b_pool_proj_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							inception_5b_pool_proj_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -17507,20 +17907,21 @@ for (int outer_h_idx = 0; outer_h_idx < inception_5b_pool_proj_outer_height; out
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_pool_proj_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_inception_5b_output_1_config>(global_feature[inception_5b_pool_proj_allocate_global_out_feature_start_idx], DDR_feature_1,
-								inception_5b_pool_proj_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								inception_5b_pool_proj_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 //pool5_7x7_s1
 //outer loop
 //copy data and call PE to do calculation
@@ -17553,14 +17954,14 @@ for (int outer_h_idx = 0; outer_h_idx < pool5_7x7_s1_outer_height; outer_h_idx++
             for (int global_in_feature_idx = 0; global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_in_feature_idx++) {
                 if (global_in_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1) {
                     nnet::clear_buffer<global_feature_config>(global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_5b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_5b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
                 }
                 else {
                     nnet::clear_buffer<global_feature_config>(global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx]);
-                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_5b_output_1_config, global_feature_config>(DDR_feature_0, global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx],
+                    nnet::copy_features_DDR2BRAM<DDR_feature_inception_5b_output_1_config, global_feature_config>(DDR_feature_1, global_feature[pool5_7x7_s1_allocate_global_in_feature_start_idx + global_in_feature_idx],
                         DDR_block_in_feature_c_start_idx + global_in_feature_idx * CHANNEL_FEATURE_GLOBAL, global_block_in_feature_c_num - global_in_feature_idx * CHANNEL_FEATURE_GLOBAL,
                         DDR_block_in_feature_h_start_idx, global_block_in_feature_h_num,
                         DDR_block_in_feature_w_start_idx, global_block_in_feature_w_num);
@@ -17668,7 +18069,7 @@ for (int outer_h_idx = 0; outer_h_idx < pool5_7x7_s1_outer_height; outer_h_idx++
                                 global_in_feature_h_start_idx, local_in_feature_h_start_idx, local_in_feature_h_num,
                                 global_in_feature_w_start_idx, local_in_feature_w_start_idx, local_in_feature_w_num);
                             //call PE and do calculation
-                            nnet::pool7x7<pool2d_config_MAX3x3_S2>(local_feature_in_AVGPOOL7x7_S1[pe_idx], local_feature_out_AVGPOOL7x7_S1[pe_idx]);
+                            nnet::pool7x7<pool2d_config_AVGPOOL7x7_S1>(local_feature_in_AVGPOOL7x7_S1[pe_idx], local_feature_out_AVGPOOL7x7_S1[pe_idx]);
 
                             //copy output feature from local BRAM to global BRAM
                             nnet::copy_features_l2g<AVGPOOL7x7_S1_local_feature_out_config, global_feature_config>(local_feature_out_AVGPOOL7x7_S1[pe_idx], global_feature[pool5_7x7_s1_allocate_global_out_feature_start_idx + global_out_feature_c_start_idx / CHANNEL_FEATURE_GLOBAL],
@@ -17703,21 +18104,22 @@ for (int outer_h_idx = 0; outer_h_idx < pool5_7x7_s1_outer_height; outer_h_idx++
                 //copy output feature from global BRAM to DRAM
                 for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
                     if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool5_7x7_s1_1_config>(global_feature[pool5_7x7_s1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool5_7x7_s1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool5_7x7_s1_1_config>(global_feature[pool5_7x7_s1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool5_7x7_s1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                     else
-                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool5_7x7_s1_1_config>(global_feature[pool5_7x7_s1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_1,
-                            pool5_7x7_s1_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+                        nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_pool5_7x7_s1_1_config>(global_feature[pool5_7x7_s1_allocate_global_out_feature_start_idx + global_out_feature_idx], DDR_feature_0,
+                            DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
                             DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-                            DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+                            pool5_7x7_s1_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
                 }
             }//end copy out feature from BRAM to DRAM
 
         }// end outer_ic loop
     }
 }
+
 //loss3_classifier
 //outer loop
 //copy data and call PE to do calculation
@@ -17777,11 +18179,11 @@ for (int outer_h_idx = 0; outer_h_idx < loss3_classifier_outer_height; outer_h_i
 				}
 				for (int global_weight_idx = 0; global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1); global_weight_idx++) {
 					if (global_weight_idx < DIV_CEIL(global_weight_oc_num, OUT_CHANNEL_WEIGHT_GLOBAL_1x1) - 1)
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[loss3_classifier_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_loss3_classifier_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[loss3_classifier_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							loss3_classifier_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 					else
-						nnet::copy_weights_DDR2BRAM<DDR_weight_1x1_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[loss3_classifier_allocate_global_weight_1x1_start_idx + global_weight_idx],
+						nnet::copy_weights_DDR2BRAM<DDR_weight_loss3_classifier_config, WEIGHT_GLOBAL_1x1_config>(DDR_weight_1x1, global_weight_1x1[loss3_classifier_allocate_global_weight_1x1_start_idx + global_weight_idx],
 							DDR_weight_oc_start_idx + global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1, global_weight_oc_num - global_weight_idx * OUT_CHANNEL_WEIGHT_GLOBAL_1x1,
 							loss3_classifier_kernel_channel_DDR_offset + DDR_weight_ic_start_idx, global_weight_ic_num);
 				}
@@ -17965,20 +18367,21 @@ for (int outer_h_idx = 0; outer_h_idx < loss3_classifier_outer_height; outer_h_i
 					for (int global_out_feature_idx = 0; global_out_feature_idx < DIV_CEIL(global_block_in_feature_c_num, CHANNEL_FEATURE_GLOBAL); global_out_feature_idx++) {
 						if (global_out_feature_idx < DIV_CEIL(DDR_block_out_feature_c_num, CHANNEL_FEATURE_GLOBAL) - 1)
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_out_config>(global_feature[loss3_classifier_allocate_global_out_feature_start_idx], DDR_feature_1,
-								loss3_classifier_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								loss3_classifier_out_feature_DDR_offset + DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 						else
 							nnet::copy_features_BRAM2DDR<global_feature_config, DDR_feature_out_config>(global_feature[loss3_classifier_allocate_global_out_feature_start_idx], DDR_feature_1,
-								loss3_classifier_out_channel_DDR_offset + DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
+								DDR_block_out_feature_c_start_idx + global_out_feature_idx * CHANNEL_FEATURE_GLOBAL, DDR_block_out_feature_c_num - global_out_feature_idx * CHANNEL_FEATURE_GLOBAL,
 								DDR_block_out_feature_h_start_idx, DDR_block_out_feature_h_num,
-								DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
+								loss3_classifier_out_feature_DDR_offset +DDR_block_out_feature_w_start_idx, DDR_block_out_feature_w_num);
 					}
 				}//end copy out feature from BRAM to DRAM
 			}// end outer_ic loop
 		}
 	}
 }
+
 	/////////////////////////////// convolution -> inception(3b) max pool////////////////////////////(top_function)
 
 

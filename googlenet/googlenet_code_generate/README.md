@@ -15,10 +15,12 @@
 ## generate_googlenet.py
 依据onnx文件填充卷积层，池化层和LRN层的模板，并写入googlenet.h，allocate_config.h和template_config.h。
 
+## 已完成
+1. 单层卷积层做csim
+2. 卷积层模板的hls synthesis
 ## TODO
-1. 复用DRAM的feature (已完成)
-2. 读取权重 
-3. 合并onnx_info.py中的几个读onnx文件的函数
-4. 细节完善(lrn的其他参数，maxpooling的最小值设置等)
-5. 为整个googlenet做csim
+1. 所有卷积层的hls synthesis
+2. 为整个googlenet做csim
+3. 整个googlenet做hls
+
 

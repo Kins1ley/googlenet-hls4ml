@@ -4,6 +4,7 @@ import onnx_info
 import generate_lrn
 import generate_pool
 import generate_conv
+
 max_layer_to_write=1000
 onnx_file_name="googlenet-7.onnx"
 if not os.path.exists(onnx_file_name) :
