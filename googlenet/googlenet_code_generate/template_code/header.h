@@ -39,7 +39,7 @@ const int OUT_CHANNEL_WEIGHT_GLOBAL_1x1 = 32;//size of global bram of weights
 const int IN_CHANNEL_WEIGHT_GLOBAL_1x1 = 32;//size of global bram of weights
 
 const int NUM_FEATURE_GLOBAL = 8;//number of global bram of feature
-const int CHANNEL_FEATURE_GLOBAL = 32;//size of global bram of feature
+const int CHANNEL_FEATURE_GLOBAL = 64;//size of global bram of feature
 const int WIDTH_FEATURE_GLOBAL = 63;//size of global bram of feature
 const int HEIGHT_FEATURE_GLOBAL = 63;//size of global bram of feature
 
@@ -59,7 +59,7 @@ const int IN_WIDTH_CONV1x1_S1 = (OUT_WIDTH_CONV1x1_S1 - 1) * STRIDE_CONV1x1_S1 +
 
 //conv3x3_s1
 const int NUM_PE_CONV3x3_S1 = 16;//number of local bram should be consistent with number of PEs
-const int IN_CHAN_CONV3x3_S1 = 16;//in_channel of input feature and weight
+const int IN_CHAN_CONV3x3_S1 = 4;//in_channel of input feature and weight
 const int OUT_CHAN_CONV3x3_S1 = 1;//out_channel of output feature and weight
 const int OUT_HEIGHT_CONV3x3_S1 = 7;
 const int OUT_WIDTH_CONV3x3_S1 = 7;
@@ -72,10 +72,10 @@ const int IN_WIDTH_CONV3x3_S1 = (OUT_WIDTH_CONV3x3_S1 - 1) * STRIDE_CONV3x3_S1 +
 
 //conv5x5_s1
 const int NUM_PE_CONV5x5_S1 = 16;//number of local bram should be consistent with number of PEs
-const int IN_CHAN_CONV5x5_S1 = 16;
+const int IN_CHAN_CONV5x5_S1 = 4;
 const int OUT_CHAN_CONV5x5_S1 = 1;
-const int OUT_HEIGHT_CONV5x5_S1 = 7;
-const int OUT_WIDTH_CONV5x5_S1 = 7;
+const int OUT_HEIGHT_CONV5x5_S1 = 5;
+const int OUT_WIDTH_CONV5x5_S1 = 5;
 const int KERNEL_HEIGHT_CONV5x5_S1 = 5;
 const int KERNEL_WIDTH_CONV5x5_S1 = 5;
 const int STRIDE_CONV5x5_S1 = 1;
@@ -87,8 +87,8 @@ const int IN_WIDTH_CONV5x5_S1 = (OUT_WIDTH_CONV5x5_S1 - 1) * STRIDE_CONV5x5_S1 +
 const int NUM_PE_CONV7x7_S2 = 2;//number of local bram should be consistent with number of PEs
 const int IN_CHAN_CONV7x7_S2 = 3;
 const int OUT_CHAN_CONV7x7_S2 = 1;
-const int OUT_HEIGHT_CONV7x7_S2 = 7;
-const int OUT_WIDTH_CONV7x7_S2 = 7;
+const int OUT_HEIGHT_CONV7x7_S2 = 3;
+const int OUT_WIDTH_CONV7x7_S2 = 3;
 const int KERNEL_HEIGHT_CONV7x7_S2 = 7;
 const int KERNEL_WIDTH_CONV7x7_S2 = 7;
 const int STRIDE_CONV7x7_S2 = 2;

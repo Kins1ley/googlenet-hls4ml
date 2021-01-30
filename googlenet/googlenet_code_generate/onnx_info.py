@@ -25,8 +25,8 @@ MAXMULT = 4096
 
 def setDir(filepath):
     '''
-    如果文件夹不存在就创建，如果文件存在就清空！
-    :param filepath:需要创建的文件夹路径
+    create(if not exists) or clean(if exists) the dir
+    :param filepath: the path
     :return:
     '''
     print("cleaning dir {}".format(filepath))
@@ -37,6 +37,13 @@ def setDir(filepath):
         os.mkdir(filepath)
 
 def get_onnx_attribute(operation, name, default=None):
+    """
+    get the attribute of the operation by name
+    :param operation:
+    :param name:
+    :param default:
+    :return:
+    """
     attr = next((x for x in operation.attribute if x.name == name), None)
     if attr is None:
         value = default
@@ -48,6 +55,13 @@ def get_onnx_attribute(operation, name, default=None):
 
 
 def get_input_shape(model, operation, input_idx=0):
+    """
+    get the input_shape of the operation
+    :param model:
+    :param operation:
+    :param input_idx:
+    :return:
+    """
     for x in model.graph.input:
         if operation.input[input_idx] == x.name:
             return [d.dim_value for d in x.type.tensor_type.shape.dim]
@@ -56,6 +70,13 @@ def get_input_shape(model, operation, input_idx=0):
 
 
 def get_output_shape(model, operation, output_idx=0):
+    """
+    get the output_shape of the operation
+    :param model:
+    :param operation:
+    :param output_idx:
+    :return:
+    """
     for x in model.graph.output:
         if operation.output[output_idx] == x.name:
             return [d.dim_value for d in x.type.tensor_type.shape.dim]
@@ -69,7 +90,11 @@ def sanitize_input_name(name):
 
 
 def read_onnx(file_name):
-    # Extract model architecture
+    """
+    Extract model architecture, modified from HLS4ML
+    :param file_name:
+    :return:
+    """
     model = ModelProto()
     with open(file_name, 'rb') as fid:
         model.ParseFromString(fid.read())
@@ -274,10 +299,8 @@ def read_onnx(file_name):
             for i in range(len(all_layer_config)):
                 for key in all_layer_config[i].keys():
                     if "layer_output" in key:
-                        # if all_layer_config[i][key] in inputs:
                         for input_name in inputs:
                             if all_layer_config[i][key][:-2] == input_name[:-2]:
-                                # print("(in relu)replacing {} with {}".format(all_layer_config[i][key],outputs[0]))
                                 all_layer_config[i][key] = outputs[0]
     for operation in model.graph.node:
         if operation.op_type == "Concat":
@@ -287,13 +310,11 @@ def read_onnx(file_name):
             for i in range(len(all_layer_config)):
                 for key in all_layer_config[i].keys():
                     if "layer_output" in key:
-                        # if all_layer_config[i][key] in inputs:
                         for input_name in inputs:
                             if all_layer_config[i][key][:-2] == input_name[:-2]:
-                                # print("(in concat)replacing {} with {}".format(all_layer_config[i][key],outputs[0]))
                                 all_layer_config[i][key] = outputs[0]
 
-    # process last layer
+    # process the last layer
     layer_config_dict = layer_config_dict_base.copy()
     input_shape = [1, 1024, 1, 1]
     pads = [0, 0, 0, 0]
@@ -333,7 +354,7 @@ def read_onnx(file_name):
 
 def read_value(file_name,all_layer_config,write_to_files=True):
     """
-    read weight and bias
+    read weight and bias and save them into txt files according to their shapes
     :param file_name:
     :param all_layer_config:
     :param write_to_files:
@@ -415,13 +436,19 @@ def read_value(file_name,all_layer_config,write_to_files=True):
         print("writing weights and input")
         # Load inputs
         inputs = []
+        image_sdt=np.array([0.229, 0.224, 0.225])
+        image_mean=np.array([0.485, 0.456, 0.406])
         inputs_num = len(glob.glob(os.path.join(test_data_dir, 'input_*.pb')))
         for i in range(inputs_num):
             input_file = os.path.join(test_data_dir, 'input_{}.pb'.format(i))
             tensor = onnx.TensorProto()
             with open(input_file, 'rb') as f:
                 tensor.ParseFromString(f.read())
-            inputs.append(numpy_helper.to_array(tensor))
+            # inputs.append(numpy_helper.to_array(tensor))
+            normalized_tensor=numpy_helper.to_array(tensor)
+            normalized_tensor=(np.swapaxes(normalized_tensor,1,3)-image_mean)/image_sdt
+            normalized_tensor=np.swapaxes(normalized_tensor,1,3)
+            inputs.append(normalized_tensor)
         # Load reference outputs
         ref_outputs = []
         ref_outputs_num = len(glob.glob(os.path.join(test_data_dir, 'output_*.pb')))
@@ -457,7 +484,8 @@ def read_value(file_name,all_layer_config,write_to_files=True):
 
 def allocate_DRAM_feature(all_layer_config):
     """
-    depend on the order of layers in the dict
+    allocate DRAM for features of different layers
+    depending on the order of layers in the dict
     :param all_layer_config:
     :return:
     """
@@ -546,5 +574,5 @@ def allocate_DRAM_feature(all_layer_config):
 if __name__ == "__main__":
     f_name = args.fname
     result = read_onnx(file_name=f_name)
-    #allocate_DRAM_feature(result)
+    allocate_DRAM_feature(result)
     read_value(f_name,result)

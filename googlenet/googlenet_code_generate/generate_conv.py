@@ -1,3 +1,6 @@
+"""
+fill in the template of conv layers
+"""
 import os
 import shutil
 top_function_mark=   "/////////////top_function/////////////"

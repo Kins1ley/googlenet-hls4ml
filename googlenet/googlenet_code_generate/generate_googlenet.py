@@ -6,9 +6,11 @@ import generate_lrn
 import generate_pool
 import generate_conv
 
+# limit the layers to generate for testing
 max_layer_to_write = 1000
 onnx_file_name = "googlenet-7.onnx"
 if not os.path.exists(onnx_file_name):
+    # url unavailable
     url = 'https://github.com/onnx/models/blob/master/vision/classification/inception_and_googlenet/googlenet/model/googlenet-7.onnx'
     raise FileNotFoundError("onnx file not found, please download it at\n{}".format(url))
     print("downloading googlenet-7.onnx")

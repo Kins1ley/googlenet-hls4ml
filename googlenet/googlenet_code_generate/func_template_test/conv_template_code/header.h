@@ -53,7 +53,7 @@ const int IN_WIDTH_CONV1x1_S1 = (OUT_WIDTH_CONV1x1_S1 - 1)*STRIDE_CONV1x1_S1 + K
 
 //conv3x3_s1
 const int NUM_PE_CONV3x3_S1 = 16;//number of local bram should be consistent with number of PEs
-const int IN_CHAN_CONV3x3_S1 = 16;//in_channel of input feature and weight
+const int IN_CHAN_CONV3x3_S1 = 4;//in_channel of input feature and weight
 const int OUT_CHAN_CONV3x3_S1 = 1;//out_channel of output feature and weight
 const int OUT_HEIGHT_CONV3x3_S1 = 7;
 const int OUT_WIDTH_CONV3x3_S1 = 7;
@@ -65,10 +65,10 @@ const int IN_WIDTH_CONV3x3_S1 = (OUT_WIDTH_CONV3x3_S1 - 1)*STRIDE_CONV3x3_S1 + K
 
 //conv5x5_s1
 const int NUM_PE_CONV5x5_S1 = 16;//number of local bram should be consistent with number of PEs
-const int IN_CHAN_CONV5x5_S1 = 16;
+const int IN_CHAN_CONV5x5_S1 = 4;
 const int OUT_CHAN_CONV5x5_S1 = 1;
-const int OUT_HEIGHT_CONV5x5_S1 = 7;
-const int OUT_WIDTH_CONV5x5_S1 = 7;
+const int OUT_HEIGHT_CONV5x5_S1 = 5;
+const int OUT_WIDTH_CONV5x5_S1 = 5;
 const int KERNEL_HEIGHT_CONV5x5_S1 = 5;
 const int KERNEL_WIDTH_CONV5x5_S1 = 5;
 const int STRIDE_CONV5x5_S1 = 1;
@@ -81,8 +81,8 @@ const int IN_CHAN_CONV7x7_S2 = 2;
 const int OUT_CHAN_CONV7x7_S2 = 1;
 const int OUT_HEIGHT_CONV7x7_S2 = 7;
 const int OUT_WIDTH_CONV7x7_S2 = 7;
-const int KERNEL_HEIGHT_CONV7x7_S2 = 7;
-const int KERNEL_WIDTH_CONV7x7_S2 = 7;
+const int KERNEL_HEIGHT_CONV7x7_S2 =3;
+const int KERNEL_WIDTH_CONV7x7_S2 = 3;
 const int STRIDE_CONV7x7_S2 = 2;
 const int IN_HEIGHT_CONV7x7_S2 = (OUT_HEIGHT_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_HEIGHT_CONV7x7_S2;
 const int IN_WIDTH_CONV7x7_S2 = (OUT_WIDTH_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KERNEL_WIDTH_CONV7x7_S2;
@@ -90,7 +90,7 @@ const int IN_WIDTH_CONV7x7_S2 = (OUT_WIDTH_CONV7x7_S2-1)* STRIDE_CONV7x7_S2 + KE
 ///config of pooling operation
 //maxpool3x3_s1
 const int NUM_PE_MAXPOOL3x3_S1 = 2;
-const int N_CHAN_MAXPOOL3x3_S1 = 16;
+const int N_CHAN_MAXPOOL3x3_S1 = 4;
 const int OUT_HEIGHT_MAXPOOL3x3_S1 = 7;
 const int OUT_WIDTH_MAXPOOL3x3_S1 = 7;
 const int KERNEL_HEIGHT_MAXPOOL3x3_S1 = 3;
@@ -101,7 +101,7 @@ const int IN_WIDTH_MAXPOOL3x3_S1 = (OUT_WIDTH_MAXPOOL3x3_S1 - 1)* STRIDE_MAXPOOL
 
 //maxpool3x3_s2
 const int NUM_PE_MAXPOOL3x3_S2 = 2;
-const int N_CHAN_MAXPOOL3x3_S2 = 16;
+const int N_CHAN_MAXPOOL3x3_S2 = 4;
 const int OUT_HEIGHT_MAXPOOL3x3_S2 = 7;
 const int OUT_WIDTH_MAXPOOL3x3_S2 = 7;
 const int KERNEL_HEIGHT_MAXPOOL3x3_S2 = 3;
@@ -112,7 +112,7 @@ const int IN_WIDTH_MAXPOOL3x3_S2 = (OUT_WIDTH_MAXPOOL3x3_S2-1)* STRIDE_MAXPOOL3x
 
 //avgpool7x7_s1
 const int NUM_PE_AVGPOOL7x7_S1 = 2;
-const int N_CHAN_AVGPOOL7x7_S1 = 16;
+const int N_CHAN_AVGPOOL7x7_S1 = 4;
 const int OUT_HEIGHT_AVGPOOL7x7_S1 = 1;
 const int OUT_WIDTH_AVGPOOL7x7_S1 = 1;
 const int KERNEL_HEIGHT_AVGPOOL7x7_S1 = 7;
